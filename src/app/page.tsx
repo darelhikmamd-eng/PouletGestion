@@ -116,18 +116,34 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-0 divide-x divide-y lg:divide-y-0 divide-gray-100">
-                      {[
-                        { label: "Vivantes", value: kpi.volaillesActuelles.toLocaleString("fr-FR"), icon: Bird, color: "text-forest-600" },
-                        { label: "Seuil de vente", value: `${Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F/sujet`, icon: Target, color: "text-brand-600" },
-                        { label: "Dépenses tot.", value: formatMontant(kpi.totalDepenses), icon: Banknote, color: "text-red-500" },
-                        { label: "Marge", value: formatMontant(kpi.marge), icon: Activity, color: kpi.marge >= 0 ? "text-forest-600" : "text-orange-500" },
-                      ].map(({ label, value, icon: Icon, color }) => (
-                        <div key={label} className="flex flex-col items-center justify-center p-3 text-center">
-                          <Icon size={14} className={`${color} mb-1`} strokeWidth={2} />
-                          <p className="text-xs font-bold text-gray-900">{value}</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{label}</p>
-                        </div>
-                      ))}
+                      {/* Vivantes + date d'entrée */}
+                      <div className="flex flex-col items-center justify-center p-3 text-center">
+                        <Bird size={14} className="text-forest-600 mb-1" strokeWidth={2} />
+                        <p className="text-xs font-bold text-gray-900">{kpi.volaillesActuelles.toLocaleString("fr-FR")} sujets</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{bande.statut === "cloture" ? "À la clôture" : "Vivantes"}</p>
+                        <p className="text-[10px] text-gray-400">{bande.date_debut}</p>
+                      </div>
+                      {/* Seuil de vente vs prix d'achat/sujet */}
+                      <div className="flex flex-col items-center justify-center p-3 text-center">
+                        <Target size={14} className="text-brand-600 mb-1" strokeWidth={2} />
+                        <p className="text-xs font-bold text-gray-900">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Seuil vente/sujet</p>
+                        <p className="text-[10px] text-gray-400">
+                          Entrée : {bande.nbr_poussins > 0 ? Math.round(bande.prix_achat_global / bande.nbr_poussins).toLocaleString("fr-FR") : "—"} F/sujet
+                        </p>
+                      </div>
+                      {/* Dépenses */}
+                      <div className="flex flex-col items-center justify-center p-3 text-center">
+                        <Banknote size={14} className="text-red-500 mb-1" strokeWidth={2} />
+                        <p className="text-xs font-bold text-gray-900">{formatMontant(kpi.totalDepenses)}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Dépenses tot.</p>
+                      </div>
+                      {/* Marge */}
+                      <div className="flex flex-col items-center justify-center p-3 text-center">
+                        <Activity size={14} className={`${kpi.marge >= 0 ? "text-forest-600" : "text-orange-500"} mb-1`} strokeWidth={2} />
+                        <p className="text-xs font-bold text-gray-900">{formatMontant(kpi.marge)}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">Marge nette</p>
+                      </div>
                     </div>
 
                     {kpi.tauxMortalite >= 3 && (
