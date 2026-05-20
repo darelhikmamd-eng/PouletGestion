@@ -84,4 +84,14 @@ export interface BandeKPIs {
   totalVendus: number;
   totalAliment: number;
   totalSante: number;
+  coutParPoussinInitial: number;
+  prixRecommande20: number;
+  prixRecommande30: number;
+  prixGrosMarge20: number;
+  prixGrosMarge30: number;
+  beneficePotentiel20: number;
+  beneficePotentiel30: number;
+  tauxMargeActuel: number;
+  totalQuantiteKg: number;
+  coutParKgEstime: number;
 }

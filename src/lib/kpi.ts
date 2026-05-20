@@ -1,5 +1,7 @@
 import type { Bande, ConsommationAliment, SanteHygiene, Sortie, BandeKPIs } from "@/types";
 
+const MARGE_GROS_DISCOUNT = 0.05; // 5% de remise pour vente en gros
+
 export function computeKPIs(
   bande: Bande,
   consommations: ConsommationAliment[],
@@ -28,18 +30,37 @@ export function computeKPIs(
 
   const totalAliment = consommations.reduce((acc, c) => acc + c.montant, 0);
   const totalSante = santeOps.reduce((acc, s) => acc + s.montant, 0);
+  const totalQuantiteKg = consommations.reduce((acc, c) => acc + c.quantite_kg, 0);
 
-  const totalDepenses =
-    bande.prix_achat_global + totalAliment + totalSante;
+  const totalDepenses = bande.prix_achat_global + totalAliment + totalSante;
+
+  const coutParPoussinInitial =
+    bande.nbr_poussins > 0 ? bande.prix_achat_global / bande.nbr_poussins : 0;
 
   const seuilVenteParSujet =
     volaillesActuelles > 0 ? totalDepenses / volaillesActuelles : 0;
+
+  const prixRecommande20 = Math.ceil(seuilVenteParSujet * 1.2);
+  const prixRecommande30 = Math.ceil(seuilVenteParSujet * 1.3);
+
+  const prixGrosMarge20 = Math.ceil(prixRecommande20 * (1 - MARGE_GROS_DISCOUNT));
+  const prixGrosMarge30 = Math.ceil(prixRecommande30 * (1 - MARGE_GROS_DISCOUNT));
+
+  const beneficePotentiel20 = prixRecommande20 * volaillesActuelles - totalDepenses;
+  const beneficePotentiel30 = prixRecommande30 * volaillesActuelles - totalDepenses;
 
   const revenuGenere = sorties
     .filter((s) => s.motif === "vente")
     .reduce((acc, s) => acc + s.montant_total, 0);
 
   const marge = revenuGenere - totalDepenses;
+
+  const tauxMargeActuel =
+    totalDepenses > 0 && revenuGenere > 0
+      ? ((revenuGenere - totalDepenses) / totalDepenses) * 100
+      : 0;
+
+  const coutParKgEstime = totalQuantiteKg > 0 ? totalDepenses / totalQuantiteKg : 0;
 
   return {
     volaillesActuelles,
@@ -53,6 +74,16 @@ export function computeKPIs(
     totalVendus,
     totalAliment,
     totalSante,
+    coutParPoussinInitial,
+    prixRecommande20,
+    prixRecommande30,
+    prixGrosMarge20,
+    prixGrosMarge30,
+    beneficePotentiel20,
+    beneficePotentiel30,
+    tauxMargeActuel,
+    totalQuantiteKg,
+    coutParKgEstime,
   };
 }
 

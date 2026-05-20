@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft, Bird, Calendar, Users, Phone, Banknote,
   Tag, CheckCircle2, XCircle, Wheat, HeartPulse, TrendingDown,
-  Target, Activity, AlertTriangle, Clock,
+  Target, Activity, AlertTriangle, Clock, TrendingUp, ShoppingCart,
+  Package, Lightbulb, Scale,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
@@ -109,48 +110,149 @@ export default function BandeDetailPage({
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {[
-            { label: "Achat poussins", value: formatMontant(bande.prix_achat_global), icon: Bird, color: "text-gray-500" },
-            { label: "Total alimentation", value: formatMontant(kpi.totalAliment), icon: Wheat, color: "text-blue-500" },
-            { label: "Total santé", value: formatMontant(kpi.totalSante), icon: HeartPulse, color: "text-purple-500" },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="card p-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <Icon size={14} className={color} strokeWidth={2} />
+        {/* Décomposition des coûts */}
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Scale size={15} className="text-gray-500" />
+            <h2 className="text-sm font-semibold text-gray-700">Décomposition des coûts</h2>
+            <span className="ml-auto text-xs font-bold text-red-600">{formatMontant(kpi.totalDepenses)} total</span>
+          </div>
+          <div className="space-y-2">
+            {[
+              { label: "Achat poussins", value: bande.prix_achat_global, icon: Bird, color: "bg-gray-400", pct: kpi.totalDepenses > 0 ? (bande.prix_achat_global / kpi.totalDepenses) * 100 : 0 },
+              { label: "Alimentation", value: kpi.totalAliment, icon: Wheat, color: "bg-blue-400", pct: kpi.totalDepenses > 0 ? (kpi.totalAliment / kpi.totalDepenses) * 100 : 0 },
+              { label: "Santé & Hygiène", value: kpi.totalSante, icon: HeartPulse, color: "bg-purple-400", pct: kpi.totalDepenses > 0 ? (kpi.totalSante / kpi.totalDepenses) * 100 : 0 },
+            ].map(({ label, value, icon: Icon, color, pct }) => (
+              <div key={label} className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <Icon size={12} className="text-gray-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs text-gray-600">{label}</span>
+                    <span className="text-xs font-semibold text-gray-800">{formatMontant(value)} <span className="text-gray-400">({pct.toFixed(0)}%)</span></span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-500">{label}</p>
-                <p className="text-sm font-bold text-gray-900">{value}</p>
-              </div>
+            ))}
+          </div>
+          {kpi.totalQuantiteKg > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+              <span>Aliments consommés : <strong className="text-gray-700">{kpi.totalQuantiteKg.toLocaleString("fr-FR")} kg</strong></span>
+              <span>Coût moyen / sujet : <strong className="text-gray-700">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F</strong></span>
             </div>
-          ))}
+          )}
         </div>
 
-        <div className="card p-4 border border-brand-200 bg-brand-50">
-          <div className="flex items-center gap-2 mb-3">
-            <Target size={15} className="text-brand-600" />
-            <h2 className="text-sm font-semibold text-brand-800">Analyse financière</h2>
+        {/* Recommandations intelligentes de vente */}
+        {kpi.volaillesActuelles > 0 && (
+          <div className="card p-4 border border-brand-200">
+            <div className="flex items-center gap-2 mb-1">
+              <Lightbulb size={15} className="text-brand-500" />
+              <h2 className="text-sm font-semibold text-gray-800">Recommandations de vente</h2>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Basées sur <strong>{kpi.volaillesActuelles} volailles vivantes</strong> · Coût de revient : <strong>{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F/sujet</strong>
+            </p>
+
+            {/* 3 scénarios de prix */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              {/* Plancher */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400" />
+                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Plancher</span>
+                </div>
+                <p className="text-2xl font-black text-gray-700">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} <span className="text-sm font-medium">F</span></p>
+                <p className="text-[10px] text-gray-500 mt-0.5">par sujet — ni gain ni perte</p>
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  <p className="text-xs text-gray-500">Si tout vendu :</p>
+                  <p className="text-sm font-bold text-gray-700">{formatMontant(Math.round(kpi.seuilVenteParSujet) * kpi.volaillesActuelles)}</p>
+                  <p className="text-xs text-gray-400">Bénéfice : 0 F</p>
+                </div>
+              </div>
+
+              {/* Marge 20% — Recommandé */}
+              <div className="rounded-xl border-2 border-brand-400 bg-brand-50 p-3 relative">
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Recommandé</div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-brand-500" />
+                  <span className="text-xs font-semibold text-brand-700 uppercase tracking-wide">Marge 20%</span>
+                </div>
+                <p className="text-2xl font-black text-brand-700">{kpi.prixRecommande20.toLocaleString("fr-FR")} <span className="text-sm font-medium">F</span></p>
+                <p className="text-[10px] text-brand-500 mt-0.5">par sujet — vente unité</p>
+                <div className="mt-2 pt-2 border-t border-brand-200">
+                  <p className="text-xs text-gray-500">Si tout vendu :</p>
+                  <p className="text-sm font-bold text-brand-700">{formatMontant(kpi.prixRecommande20 * kpi.volaillesActuelles)}</p>
+                  <p className="text-xs text-forest-600 font-semibold">+ {formatMontant(kpi.beneficePotentiel20)}</p>
+                </div>
+              </div>
+
+              {/* Marge 30% — Optimal */}
+              <div className="rounded-xl border border-forest-300 bg-forest-50 p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-forest-500" />
+                  <span className="text-xs font-semibold text-forest-700 uppercase tracking-wide">Optimal 30%</span>
+                </div>
+                <p className="text-2xl font-black text-forest-700">{kpi.prixRecommande30.toLocaleString("fr-FR")} <span className="text-sm font-medium">F</span></p>
+                <p className="text-[10px] text-forest-500 mt-0.5">par sujet — vente unité</p>
+                <div className="mt-2 pt-2 border-t border-forest-200">
+                  <p className="text-xs text-gray-500">Si tout vendu :</p>
+                  <p className="text-sm font-bold text-forest-700">{formatMontant(kpi.prixRecommande30 * kpi.volaillesActuelles)}</p>
+                  <p className="text-xs text-forest-600 font-semibold">+ {formatMontant(kpi.beneficePotentiel30)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Comparaison vente unité vs gros */}
+            <div className="rounded-xl bg-gray-50 border border-gray-200 p-3">
+              <p className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-1.5">
+                <ShoppingCart size={13} />
+                Mode de vente — comparaison
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white rounded-lg p-2.5 border border-gray-200">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Package size={12} className="text-brand-500" />
+                    <span className="text-xs font-semibold text-gray-700">Par unité</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Prix conseillé</p>
+                  <p className="text-base font-black text-brand-600">{kpi.prixRecommande20.toLocaleString("fr-FR")} F</p>
+                  <p className="text-[10px] text-gray-400 mt-1">Meilleur revenu · Vente progressive</p>
+                </div>
+                <div className="bg-white rounded-lg p-2.5 border border-gray-200">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <TrendingUp size={12} className="text-forest-500" />
+                    <span className="text-xs font-semibold text-gray-700">En gros (lot entier)</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Prix conseillé (−5%)</p>
+                  <p className="text-base font-black text-forest-600">{kpi.prixGrosMarge20.toLocaleString("fr-FR")} F</p>
+                  <p className="text-[10px] text-gray-400 mt-1">Paiement immédiat · Zéro invendu</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Résultat actuel si ventes déjà faites */}
+            {kpi.revenuGenere > 0 && (
+              <div className={`mt-3 rounded-lg p-3 flex items-center gap-3 ${kpi.marge >= 0 ? "bg-forest-50 border border-forest-200" : "bg-orange-50 border border-orange-200"}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${kpi.marge >= 0 ? "bg-forest-100" : "bg-orange-100"}`}>
+                  <Activity size={14} className={kpi.marge >= 0 ? "text-forest-600" : "text-orange-600"} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-700">Résultat ventes réalisées</p>
+                  <p className="text-xs text-gray-500">{kpi.totalVendus} sujets vendus · {formatMontant(kpi.revenuGenere)} encaissés</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-base font-black ${kpi.marge >= 0 ? "text-forest-700" : "text-orange-600"}`}>{formatMontant(kpi.marge)}</p>
+                  <p className="text-[10px] text-gray-400">{kpi.marge >= 0 ? `+${kpi.tauxMargeActuel.toFixed(1)}%` : `${kpi.tauxMargeActuel.toFixed(1)}%`}</p>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-            <div>
-              <p className="text-xs text-gray-500">Dépenses totales</p>
-              <p className="text-base font-bold text-red-600">{formatMontant(kpi.totalDepenses)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Revenus ventes</p>
-              <p className="text-base font-bold text-forest-600">{formatMontant(kpi.revenuGenere)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Marge</p>
-              <p className={`text-base font-bold ${kpi.marge >= 0 ? "text-forest-700" : "text-orange-600"}`}>{formatMontant(kpi.marge)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Seuil vente/sujet</p>
-              <p className="text-base font-bold text-brand-700">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F</p>
-            </div>
-          </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="card p-4">
