@@ -30,7 +30,9 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel }: SortieFormProp
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof SortieFormData, string>>>({});
 
-  const bandesActives = bandes.filter((b) => b.statut === "actif");
+  const bandesSorted = [...bandes].sort((a, b) =>
+    a.statut === "actif" && b.statut !== "actif" ? -1 : a.statut !== "actif" && b.statut === "actif" ? 1 : 0
+  );
 
   useEffect(() => {
     if (form.motif === "vente") {
@@ -85,8 +87,8 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel }: SortieFormProp
           error={errors.bande_id}
         >
           <option value="">— Sélectionner —</option>
-          {bandesActives.map((b) => (
-            <option key={b.id} value={b.id}>{b.nom_lot}</option>
+          {bandesSorted.map((b) => (
+            <option key={b.id} value={b.id}>{b.nom_lot}{b.statut === "cloture" ? " (clôturée)" : ""}</option>
           ))}
         </Select>
 

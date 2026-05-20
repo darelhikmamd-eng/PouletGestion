@@ -28,7 +28,9 @@ export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormPr
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof ConsommationFormData, string>>>({});
 
-  const bandesActives = bandes.filter((b) => b.statut === "actif");
+  const bandesSorted = [...bandes].sort((a, b) =>
+    a.statut === "actif" && b.statut !== "actif" ? -1 : a.statut !== "actif" && b.statut === "actif" ? 1 : 0
+  );
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value, type } = e.target;
@@ -69,9 +71,9 @@ export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormPr
           error={errors.bande_id}
         >
           <option value="">— Sélectionner —</option>
-          {bandesActives.map((b) => (
+          {bandesSorted.map((b) => (
             <option key={b.id} value={b.id}>
-              {b.nom_lot}
+              {b.nom_lot}{b.statut === "cloture" ? " (clôturée)" : ""}
             </option>
           ))}
         </Select>

@@ -29,7 +29,9 @@ export function SanteForm({ bandeId = "", onSuccess, onCancel }: SanteFormProps)
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof SanteFormData, string>>>({});
 
-  const bandesActives = bandes.filter((b) => b.statut === "actif");
+  const bandesSorted = [...bandes].sort((a, b) =>
+    a.statut === "actif" && b.statut !== "actif" ? -1 : a.statut !== "actif" && b.statut === "actif" ? 1 : 0
+  );
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value, type } = e.target;
@@ -70,8 +72,8 @@ export function SanteForm({ bandeId = "", onSuccess, onCancel }: SanteFormProps)
           error={errors.bande_id}
         >
           <option value="">— Sélectionner —</option>
-          {bandesActives.map((b) => (
-            <option key={b.id} value={b.id}>{b.nom_lot}</option>
+          {bandesSorted.map((b) => (
+            <option key={b.id} value={b.id}>{b.nom_lot}{b.statut === "cloture" ? " (clôturée)" : ""}</option>
           ))}
         </Select>
 
