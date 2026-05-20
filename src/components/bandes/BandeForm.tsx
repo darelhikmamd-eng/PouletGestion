@@ -47,6 +47,7 @@ export function BandeForm() {
   const [form, setForm] = useState<BandeFormData>(defaultForm);
   const [errors, setErrors] = useState<BandeFormErrors>({});
   const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -69,13 +70,23 @@ export function BandeForm() {
       return;
     }
     setLoading(true);
-    const newBande = await addBande(form);
-    setLoading(false);
-    router.push(`/bandes/${newBande.id}`);
+    setApiError(null);
+    try {
+      const newBande = await addBande(form);
+      router.push(`/bandes/${newBande.id}`);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Erreur inconnue");
+      setLoading(false);
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+      {apiError && (
+        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
+          ⚠️ {apiError}
+        </div>
+      )}
       <section className="card p-4 lg:p-6 space-y-4">
         <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b border-gray-100 pb-2">
           Informations générales

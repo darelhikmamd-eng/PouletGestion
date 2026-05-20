@@ -73,17 +73,22 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error ?? "Erreur lors de la création de la bande");
+    }
     const newBande: Bande = await res.json();
     set((state) => ({ bandes: [...state.bandes, newBande] }));
     return newBande;
   },
 
   cloturerBande: async (id) => {
-    await fetch(`/api/bandes/${id}`, {
+    const res = await fetch(`/api/bandes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ statut: "cloture" }),
     });
+    if (!res.ok) throw new Error("Erreur lors de la clôture");
     set((state) => ({
       bandes: state.bandes.map((b) =>
         b.id === id ? { ...b, statut: "cloture" } : b
@@ -104,6 +109,7 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
     const newEntry: ConsommationAliment = await res.json();
     set((state) => ({ consommations: [...state.consommations, newEntry] }));
   },
@@ -114,6 +120,7 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
     const newEntry: SanteHygiene = await res.json();
     set((state) => ({ santeOps: [...state.santeOps, newEntry] }));
   },
@@ -124,6 +131,7 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
     const newEntry: Sortie = await res.json();
     set((state) => ({ sorties: [...state.sorties, newEntry] }));
   },
