@@ -34,15 +34,20 @@ export default function DashboardPage() {
   const { bandes, consommations, santeOps, sorties } = useBandesStore();
 
   const bandesActives = bandes.filter((b) => b.statut === "actif");
+  const bandesCloturees = bandes.filter((b) => b.statut === "cloture");
 
-  const globalKPIs = bandesActives.map((b) => {
+  const allKPIs = bandes.map((b) => {
     const bc = consommations.filter((c) => c.bande_id === b.id);
     const bs = santeOps.filter((s) => s.bande_id === b.id);
     const bso = sorties.filter((s) => s.bande_id === b.id);
-    return computeKPIs(b, bc, bs, bso);
+    return { bande: b, kpi: computeKPIs(b, bc, bs, bso) };
   });
 
-  const totalVolailles = globalKPIs.reduce((acc, k) => acc + k.volaillesActuelles, 0);
+  const globalKPIs = allKPIs.map((x) => x.kpi);
+
+  const totalVolailles = allKPIs
+    .filter((x) => x.bande.statut === "actif")
+    .reduce((acc, x) => acc + x.kpi.volaillesActuelles, 0);
   const totalDepenses = globalKPIs.reduce((acc, k) => acc + k.totalDepenses, 0);
   const totalRevenu = globalKPIs.reduce((acc, k) => acc + k.revenuGenere, 0);
   const totalMarge = totalRevenu - totalDepenses;
@@ -61,41 +66,42 @@ export default function DashboardPage() {
         <div>
           <h1 className="page-title">Tableau de bord</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {bandesActives.length} bande{bandesActives.length > 1 ? "s" : ""} active{bandesActives.length > 1 ? "s" : ""}
+            {bandesActives.length} active{bandesActives.length > 1 ? "s" : ""}
+            {bandesCloturees.length > 0 && ` · ${bandesCloturees.length} clôturée${bandesCloturees.length > 1 ? "s" : ""}`}
+            {bandes.length === 0 && "Aucune bande"}
           </p>
         </div>
       </div>
 
       <div className="px-4 lg:px-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <KPICard label="Volailles vivantes" value={totalVolailles.toLocaleString("fr-FR")} sub={`${bandes.filter(b=>b.statut==="actif").reduce((a,b)=>a+b.nbr_poussins,0).toLocaleString("fr-FR")} initiaux`} icon={Bird} color="bg-forest-50 text-forest-700" iconColor="bg-forest-100" />
+          <KPICard label="Volailles vivantes" value={totalVolailles.toLocaleString("fr-FR")} sub={`${bandes.reduce((a,b)=>a+b.nbr_poussins,0).toLocaleString("fr-FR")} initiaux (toutes)`} icon={Bird} color="bg-forest-50 text-forest-700" iconColor="bg-forest-100" />
           <KPICard label="Total dépenses" value={formatMontant(totalDepenses)} icon={Banknote} color="bg-red-50 text-red-700" iconColor="bg-red-100" />
           <KPICard label="Revenus générés" value={formatMontant(totalRevenu)} icon={TrendingUp} color="bg-blue-50 text-blue-700" iconColor="bg-blue-100" />
           <KPICard label="Marge nette" value={formatMontant(totalMarge)} icon={Activity} color={totalMarge >= 0 ? "bg-forest-50 text-forest-800" : "bg-orange-50 text-orange-700"} iconColor={totalMarge >= 0 ? "bg-forest-100" : "bg-orange-100"} alert={totalMarge < 0} />
         </div>
 
-        {bandesActives.length > 0 && (
+        {allKPIs.length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              KPIs par bande active
+              {bandesActives.length > 0 ? "KPIs par bande" : "Bandes enregistrées"}
             </h2>
             <div className="space-y-3">
-              {bandesActives.map((bande) => {
-                const bc = consommations.filter((c) => c.bande_id === bande.id);
-                const bs = santeOps.filter((s) => s.bande_id === bande.id);
-                const bso = sorties.filter((s) => s.bande_id === bande.id);
-                const kpi = computeKPIs(bande, bc, bs, bso);
+              {allKPIs.map(({ bande, kpi }) => {
                 const mortaliteOk = kpi.tauxMortalite < 3;
 
                 return (
-                  <div key={bande.id} className="card overflow-hidden">
+                  <div key={bande.id} className={`card overflow-hidden ${bande.statut === "cloture" ? "opacity-75" : ""}`}>
                     <div className="flex items-center justify-between p-4 pb-3 border-b border-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-forest-100 flex items-center justify-center">
-                          <Bird size={16} className="text-forest-600" strokeWidth={2} />
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${bande.statut === "actif" ? "bg-forest-100" : "bg-gray-100"}`}>
+                          <Bird size={16} className={bande.statut === "actif" ? "text-forest-600" : "text-gray-400"} strokeWidth={2} />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900">{bande.nom_lot}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-gray-900">{bande.nom_lot}</p>
+                            {bande.statut === "cloture" && <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-medium">Clôturée</span>}
+                          </div>
                           <p className="text-xs text-gray-500">{bande.race} · J+{kpi.ageBande}</p>
                         </div>
                       </div>
