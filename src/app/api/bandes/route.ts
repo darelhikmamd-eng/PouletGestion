@@ -11,8 +11,9 @@ export async function GET() {
     const all = await getDb().select().from(bandes);
     return NextResponse.json(all);
   } catch (error) {
-    console.error("GET /api/bandes", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : "Erreur inconnue";
+    console.error("GET /api/bandes", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
     await getDb().insert(bandes).values(newBande);
     return NextResponse.json(newBande, { status: 201 });
   } catch (error) {
-    console.error("POST /api/bandes", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    const msg = error instanceof Error ? error.message : "Erreur inconnue";
+    console.error("POST /api/bandes", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
