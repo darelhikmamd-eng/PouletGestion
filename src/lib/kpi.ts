@@ -16,7 +16,8 @@ export function computeKPIs(
     .filter((s) => s.motif === "vente")
     .reduce((acc, s) => acc + s.quantite, 0);
 
-  const volaillesActuelles = bande.nbr_poussins - totalDeces - totalVendus;
+  const volaillesActuelles = Math.max(0, bande.nbr_poussins - totalDeces - totalVendus);
+  const survivants = Math.max(0, bande.nbr_poussins - totalDeces);
 
   const tauxMortalite =
     bande.nbr_poussins > 0 ? (totalDeces / bande.nbr_poussins) * 100 : 0;
@@ -38,7 +39,7 @@ export function computeKPIs(
     bande.nbr_poussins > 0 ? bande.prix_achat_global / bande.nbr_poussins : 0;
 
   const seuilVenteParSujet =
-    volaillesActuelles > 0 ? totalDepenses / volaillesActuelles : 0;
+    survivants > 0 ? totalDepenses / survivants : (bande.nbr_poussins > 0 ? totalDepenses / bande.nbr_poussins : 0);
 
   const prixRecommande20 = Math.ceil(seuilVenteParSujet * 1.2);
   const prixRecommande30 = Math.ceil(seuilVenteParSujet * 1.3);
@@ -64,6 +65,7 @@ export function computeKPIs(
 
   return {
     volaillesActuelles,
+    survivants,
     tauxMortalite,
     ageBande,
     totalDepenses,

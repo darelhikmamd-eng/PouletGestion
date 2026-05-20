@@ -74,6 +74,7 @@ export type SortieFormData = Omit<Sortie, "id">;
 
 export interface BandeKPIs {
   volaillesActuelles: number;
+  survivants: number;
   tauxMortalite: number;
   ageBande: number;
   totalDepenses: number;

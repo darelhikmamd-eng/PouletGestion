@@ -119,8 +119,10 @@ export default function DashboardPage() {
                       {/* Vivantes + date d'entrée */}
                       <div className="flex flex-col items-center justify-center p-3 text-center">
                         <Bird size={14} className="text-forest-600 mb-1" strokeWidth={2} />
-                        <p className="text-xs font-bold text-gray-900">{kpi.volaillesActuelles.toLocaleString("fr-FR")} sujets</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{bande.statut === "cloture" ? "À la clôture" : "Vivantes"}</p>
+                        <p className="text-xs font-bold text-gray-900">
+                          {bande.statut === "cloture" ? kpi.survivants.toLocaleString("fr-FR") : kpi.volaillesActuelles.toLocaleString("fr-FR")} sujets
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{bande.statut === "cloture" ? "Survivants (vendables)" : "Vivantes"}</p>
                         <p className="text-[10px] text-gray-400">{bande.date_debut}</p>
                       </div>
                       {/* Seuil de vente vs prix d'achat/sujet */}
