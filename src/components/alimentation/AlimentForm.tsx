@@ -25,6 +25,7 @@ const defaultForm = (bandeId: string): ConsommationFormData => ({
 export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormProps) {
   const { bandes, addConsommation } = useBandesStore();
   const [form, setForm] = useState<ConsommationFormData>(defaultForm(bandeId));
+  const [nbSacs, setNbSacs] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof ConsommationFormData, string>>>({});
 
@@ -32,8 +33,23 @@ export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormPr
     a.statut === "actif" && b.statut !== "actif" ? -1 : a.statut !== "actif" && b.statut === "actif" ? 1 : 0
   );
 
+  const isSac = form.conditionnement === "Sac (50 kg)";
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value, type } = e.target;
+    if (name === "conditionnement") {
+      setNbSacs(0);
+      setForm((prev) => ({ ...prev, conditionnement: value as typeof prev.conditionnement, quantite_kg: 0 }));
+      setErrors((prev) => ({ ...prev, conditionnement: undefined, quantite_kg: undefined }));
+      return;
+    }
+    if (name === "nb_sacs") {
+      const n = Number(value);
+      setNbSacs(n);
+      setForm((prev) => ({ ...prev, quantite_kg: n * 50 }));
+      setErrors((prev) => ({ ...prev, quantite_kg: undefined }));
+      return;
+    }
     setForm((prev) => ({
       ...prev,
       [name]: type === "number" ? Number(value) : value,
@@ -109,18 +125,33 @@ export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormPr
           ))}
         </Select>
 
-        <Input
-          label="Quantité (kg) *"
-          name="quantite_kg"
-          type="number"
-          min={0}
-          step={0.5}
-          value={form.quantite_kg || ""}
-          onChange={handleChange}
-          placeholder="Ex: 50"
-          hint={form.conditionnement === "Sac (50 kg)" ? "1 sac = 50 kg" : "Saisir en kg"}
-          error={errors.quantite_kg}
-        />
+        {isSac ? (
+          <Input
+            label="Nombre de sacs *"
+            name="nb_sacs"
+            type="number"
+            min={1}
+            step={1}
+            value={nbSacs || ""}
+            onChange={handleChange}
+            placeholder="Ex: 2"
+            hint={nbSacs > 0 ? `= ${nbSacs * 50} kg au total` : "1 sac = 50 kg"}
+            error={errors.quantite_kg}
+          />
+        ) : (
+          <Input
+            label="Quantité (kg) *"
+            name="quantite_kg"
+            type="number"
+            min={0}
+            step={0.5}
+            value={form.quantite_kg || ""}
+            onChange={handleChange}
+            placeholder="Ex: 25"
+            hint="Saisir directement en kg"
+            error={errors.quantite_kg}
+          />
+        )}
 
         <Input
           label="Montant (FCFA) *"
