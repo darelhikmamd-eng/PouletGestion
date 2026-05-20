@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { bandes } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const [bande] = await db.select().from(bandes).where(eq(bandes.id, id));
+    const [bande] = await getDb().select().from(bandes).where(eq(bandes.id, id));
     if (!bande) return NextResponse.json({ error: "Non trouvé" }, { status: 404 });
     return NextResponse.json(bande);
   } catch (error) {
@@ -25,6 +25,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const data = await req.json();
+    const db = getDb();
     await db.update(bandes).set(data).where(eq(bandes.id, id));
     const [updated] = await db.select().from(bandes).where(eq(bandes.id, id));
     return NextResponse.json(updated);
@@ -40,7 +41,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.delete(bandes).where(eq(bandes.id, id));
+    await getDb().delete(bandes).where(eq(bandes.id, id));
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/bandes/[id]", error);

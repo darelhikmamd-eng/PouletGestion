@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { bandes } from "@/lib/schema";
 
 function generateId(): string {
@@ -8,7 +8,7 @@ function generateId(): string {
 
 export async function GET() {
   try {
-    const all = await db.select().from(bandes);
+    const all = await getDb().select().from(bandes);
     return NextResponse.json(all);
   } catch (error) {
     console.error("GET /api/bandes", error);
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       contact_fournisseur: data.contact_fournisseur ?? "",
       statut: "actif",
     };
-    await db.insert(bandes).values(newBande);
+    await getDb().insert(bandes).values(newBande);
     return NextResponse.json(newBande, { status: 201 });
   } catch (error) {
     console.error("POST /api/bandes", error);

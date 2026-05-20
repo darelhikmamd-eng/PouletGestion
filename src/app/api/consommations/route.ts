@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 import { consommations } from "@/lib/schema";
 
 function generateId(): string {
@@ -8,7 +8,7 @@ function generateId(): string {
 
 export async function GET() {
   try {
-    const all = await db.select().from(consommations);
+    const all = await getDb().select().from(consommations);
     return NextResponse.json(all);
   } catch (error) {
     console.error("GET /api/consommations", error);
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       quantite_kg: data.quantite_kg,
       montant: data.montant,
     };
-    await db.insert(consommations).values(newEntry);
+    await getDb().insert(consommations).values(newEntry);
     return NextResponse.json(newEntry, { status: 201 });
   } catch (error) {
     console.error("POST /api/consommations", error);
