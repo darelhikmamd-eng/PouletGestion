@@ -54,8 +54,7 @@ export function SanteForm({ bandeId = "", onSuccess, onCancel }: SanteFormProps)
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 300));
-    addSanteOp(form);
+    await addSanteOp(form);
     setLoading(false);
     onSuccess();
   }

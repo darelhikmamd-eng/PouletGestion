@@ -67,8 +67,7 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel }: SortieFormProp
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 300));
-    addSortie(form);
+    await addSortie(form);
     setLoading(false);
     onSuccess();
   }

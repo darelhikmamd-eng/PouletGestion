@@ -69,8 +69,7 @@ export function BandeForm() {
       return;
     }
     setLoading(true);
-    await new Promise((res) => setTimeout(res, 400));
-    const newBande = addBande(form);
+    const newBande = await addBande(form);
     setLoading(false);
     router.push(`/bandes/${newBande.id}`);
   }

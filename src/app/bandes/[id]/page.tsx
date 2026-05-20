@@ -72,7 +72,7 @@ export default function BandeDetailPage({
             <span className="hidden sm:inline">Rapport</span>
           </Link>
           {isActive && (
-            <button onClick={() => cloturerBande(bande.id)} className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+            <button onClick={() => void cloturerBande(bande.id)} className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
               <XCircle size={15} />
               <span className="hidden sm:inline">Clôturer</span>
             </button>

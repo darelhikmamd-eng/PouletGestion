@@ -53,8 +53,7 @@ export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormPr
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 300));
-    addConsommation(form);
+    await addConsommation(form);
     setLoading(false);
     onSuccess();
   }
