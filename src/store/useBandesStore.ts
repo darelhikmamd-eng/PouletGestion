@@ -27,8 +27,11 @@ interface BandesState {
   deleteBande: (id: string) => Promise<void>;
 
   addConsommation: (data: ConsommationFormData) => Promise<void>;
+  deleteConsommation: (id: string) => Promise<void>;
   addSanteOp: (data: SanteFormData) => Promise<void>;
+  deleteSanteOp: (id: string) => Promise<void>;
   addSortie: (data: SortieFormData) => Promise<void>;
+  deleteSortie: (id: string) => Promise<void>;
 
   getBandeById: (id: string) => Bande | undefined;
   getConsommationsByBande: (bandeId: string) => ConsommationAliment[];
@@ -114,6 +117,12 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
     set((state) => ({ consommations: [...state.consommations, newEntry] }));
   },
 
+  deleteConsommation: async (id) => {
+    const res = await fetch(`/api/consommations/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Erreur lors de la suppression");
+    set((state) => ({ consommations: state.consommations.filter((c) => c.id !== id) }));
+  },
+
   addSanteOp: async (data) => {
     const res = await fetch("/api/sante", {
       method: "POST",
@@ -125,6 +134,12 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
     set((state) => ({ santeOps: [...state.santeOps, newEntry] }));
   },
 
+  deleteSanteOp: async (id) => {
+    const res = await fetch(`/api/sante/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Erreur lors de la suppression");
+    set((state) => ({ santeOps: state.santeOps.filter((s) => s.id !== id) }));
+  },
+
   addSortie: async (data) => {
     const res = await fetch("/api/sorties", {
       method: "POST",
@@ -134,6 +149,12 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
     if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
     const newEntry: Sortie = await res.json();
     set((state) => ({ sorties: [...state.sorties, newEntry] }));
+  },
+
+  deleteSortie: async (id) => {
+    const res = await fetch(`/api/sorties/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Erreur lors de la suppression");
+    set((state) => ({ sorties: state.sorties.filter((s) => s.id !== id) }));
   },
 
   getBandeById: (id) => get().bandes.find((b) => b.id === id),

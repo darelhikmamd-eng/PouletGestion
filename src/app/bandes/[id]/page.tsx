@@ -7,7 +7,7 @@ import {
   ArrowLeft, Bird, Calendar, Users, Phone, Banknote,
   Tag, CheckCircle2, XCircle, Wheat, HeartPulse, TrendingDown,
   Target, Activity, AlertTriangle, Clock, TrendingUp, ShoppingCart,
-  Package, Lightbulb, Scale,
+  Package, Lightbulb, Scale, Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
@@ -39,8 +39,8 @@ export default function BandeDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { getBandeById, cloturerBande, getConsommationsByBande, getSanteByBande, getSortiesByBande } =
-    useBandesStore();
+  const { getBandeById, cloturerBande, getConsommationsByBande, getSanteByBande, getSortiesByBande,
+    deleteConsommation, deleteSanteOp, deleteSortie } = useBandesStore();
 
   const bande = getBandeById(id);
   if (!bande) return notFound();
@@ -288,9 +288,14 @@ export default function BandeDetailPage({
             ) : (
               <div className="space-y-1.5">
                 {consommations.slice(0, 4).map((c) => (
-                  <div key={c.id} className="flex items-center justify-between text-xs">
+                  <div key={c.id} className="flex items-center justify-between text-xs group">
                     <span className="text-gray-600">{c.type_aliment}</span>
-                    <span className="font-medium text-gray-800">{c.quantite_kg} kg — {formatMontant(c.montant)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-800">{c.quantite_kg} kg — {formatMontant(c.montant)}</span>
+                      <button onClick={() => void deleteConsommation(c.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all">
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {consommations.length > 4 && <p className="text-xs text-gray-400 text-center">+{consommations.length - 4} autres</p>}
@@ -307,9 +312,14 @@ export default function BandeDetailPage({
             ) : (
               <div className="space-y-1.5">
                 {santeOps.slice(0, 4).map((s) => (
-                  <div key={s.id} className="flex items-center justify-between text-xs">
+                  <div key={s.id} className="flex items-center justify-between text-xs group">
                     <span className="text-gray-600 truncate max-w-[100px]">{s.medicament}</span>
-                    <span className="font-medium text-gray-800">{s.type_op}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-800">{s.type_op}</span>
+                      <button onClick={() => void deleteSanteOp(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all">
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {santeOps.length > 4 && <p className="text-xs text-gray-400 text-center">+{santeOps.length - 4} autres</p>}
@@ -326,9 +336,14 @@ export default function BandeDetailPage({
             ) : (
               <div className="space-y-1.5">
                 {sorties.slice(0, 4).map((s) => (
-                  <div key={s.id} className="flex items-center justify-between text-xs">
+                  <div key={s.id} className="flex items-center justify-between text-xs group">
                     <Badge variant={s.motif === "vente" ? "success" : "error"}>{s.motif}</Badge>
-                    <span className="font-medium text-gray-800">{s.quantite} sujets{s.motif === "vente" ? ` — ${formatMontant(s.montant_total)}` : ""}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-800">{s.quantite} sujets{s.motif === "vente" ? ` — ${formatMontant(s.montant_total)}` : ""}</span>
+                      <button onClick={() => void deleteSortie(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all">
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
                   </div>
                 ))}
                 {sorties.length > 4 && <p className="text-xs text-gray-400 text-center">+{sorties.length - 4} autres</p>}
