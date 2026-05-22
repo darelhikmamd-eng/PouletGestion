@@ -31,9 +31,19 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel, onlyVente = fals
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof SortieFormData, string>>>({});
 
-  const bandesSorted = [...bandes].sort((a, b) =>
-    a.statut === "actif" && b.statut !== "actif" ? -1 : a.statut !== "actif" && b.statut === "actif" ? 1 : 0
-  );
+  const today = new Date();
+  const eligibleBandes = bandes
+    .filter((b) => {
+      if (bandeId && b.id === bandeId) return true;
+      if (b.statut !== "actif") return false;
+      const debut = new Date(b.date_debut);
+      const ageJours = Math.max(
+        0,
+        Math.floor((today.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24))
+      );
+      return ageJours >= 45;
+    })
+    .sort((a, b) => a.nom_lot.localeCompare(b.nom_lot));
 
   useEffect(() => {
     if (form.motif === "vente") {
@@ -89,8 +99,8 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel, onlyVente = fals
           disabled={!!bandeId}
         >
           <option value="">— Sélectionner —</option>
-          {bandesSorted.map((b) => (
-            <option key={b.id} value={b.id}>{b.nom_lot}{b.statut === "cloture" ? " (clôturée)" : ""}</option>
+          {eligibleBandes.map((b) => (
+            <option key={b.id} value={b.id}>{b.nom_lot}</option>
           ))}
         </Select>
 
