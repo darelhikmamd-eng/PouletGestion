@@ -128,12 +128,20 @@ export default function DashboardPage() {
   ];
 
   const bandsReadyForTransition = allKPIs.filter(
-    (x) => x.bande.statut === "actif" && x.kpi.ageBande >= 45
+    (x) => (selectedBandeId === "all" || x.bande.id === selectedBandeId) && x.bande.statut === "actif" && x.kpi.ageBande >= 45
   );
 
   const displayedKPIs = selectedBandeId === "all"
     ? allKPIs
     : allKPIs.filter((x) => x.bande.id === selectedBandeId);
+
+  const doughnutChartTitle = selectedBandeId === "all"
+    ? "Structure financière globale"
+    : `Structure financière du lot : ${selectedKPIs[0]?.bande.nom_lot}`;
+
+  const doughnutChartSubtitle = selectedBandeId === "all"
+    ? "Répartition des charges directes de l'exploitation"
+    : `Répartition des charges directes pour ce lot (${selectedKPIs[0]?.bande.race})`;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -265,9 +273,9 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Activity size={15} className="text-brand-500" />
-                Structure financière globale
+                {doughnutChartTitle}
               </h2>
-              <p className="text-xs text-gray-400 font-semibold mb-4">Répartition des charges directes de l'exploitation</p>
+              <p className="text-xs text-gray-400 font-semibold mb-4">{doughnutChartSubtitle}</p>
             </div>
             {totalDepenses > 0 ? (
               <SVGDoughnutChart data={chartData} />
