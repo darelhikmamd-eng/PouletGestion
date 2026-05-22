@@ -381,24 +381,6 @@ export default function BandeDetailPage({
           </div>
         </div>
 
-        {/* Dashboard 4 KPI highlights */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Sujets vivants", value: kpi.volaillesActuelles.toLocaleString("fr-FR"), sub: `sur ${bande.nbr_poussins} poussins`, icon: Bird, color: "bg-emerald-50/60 text-emerald-950 border border-emerald-100", iconBg: "bg-emerald-100/70 text-emerald-700" },
-            { label: "Mortalité réelle", value: `${kpi.tauxMortalite.toFixed(1)}%`, sub: `${kpi.totalDeces} décès`, icon: AlertTriangle, color: mortaliteAlert ? "bg-red-50/60 text-red-950 border border-red-100" : "bg-gray-50/60 text-gray-900 border border-gray-150", iconBg: mortaliteAlert ? "bg-red-100/70 text-red-700" : "bg-gray-150/70 text-gray-600" },
-            { label: "Seuil de vente", value: `${Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F`, sub: "Prix de revient unitaire", icon: Target, color: "bg-brand-50/60 text-brand-950 border border-brand-100", iconBg: "bg-brand-100/70 text-brand-700" },
-            { label: "Résultat financier", value: formatMontant(kpi.marge), sub: kpi.marge >= 0 ? "Marge bénéficiaire" : "Perte", icon: Activity, color: kpi.marge >= 0 ? "bg-forest-50/60 text-forest-950 border border-forest-100" : "bg-orange-50/60 text-orange-950 border border-orange-100", iconBg: kpi.marge >= 0 ? "bg-forest-100/70 text-forest-700" : "bg-orange-100/70 text-orange-700" },
-          ].map(({ label, value, sub, icon: Icon, color, iconBg }) => (
-            <div key={label} className={`card p-4 transition-all duration-300 hover:shadow-md ${color}`}>
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${iconBg} mb-2 shadow-sm`}>
-                <Icon size={16} strokeWidth={2.5} />
-              </div>
-              <p className="text-xl font-black tracking-tight leading-none text-gray-900">{value}</p>
-              <p className="text-[10px] opacity-75 font-semibold mt-1">{sub}</p>
-              <p className="text-xs font-bold opacity-90 mt-2 uppercase tracking-wide">{label}</p>
-            </div>
-          ))}
-        </div>
 
         {/* Style block for radar scanner effect */}
         <style>{`
