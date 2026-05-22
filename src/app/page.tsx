@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Bird, Wheat, HeartPulse, TrendingDown, ArrowRight,
@@ -34,6 +35,8 @@ function KPICard({
 export default function DashboardPage() {
   const { bandes, consommations, santeOps, sorties, cloturerBande } = useBandesStore();
 
+  const [selectedBandeId, setSelectedBandeId] = useState<string>("all");
+
   const bandesActives = bandes.filter((b) => b.statut === "actif");
   const bandesCloturees = bandes.filter((b) => b.statut === "cloture");
 
@@ -44,21 +47,71 @@ export default function DashboardPage() {
     return { bande: b, kpi: computeKPIs(b, bc, bs, bso) };
   });
 
-  const globalKPIs = allKPIs.map((x) => x.kpi);
+  // Calculate filtered sets based on selectedBandeId
+  const filteredBandes = selectedBandeId === "all"
+    ? bandes
+    : bandes.filter((b) => b.id === selectedBandeId);
 
-  const totalVolailles = allKPIs
-    .filter((x) => x.bande.statut === "actif")
-    .reduce((acc, x) => acc + x.kpi.volaillesActuelles, 0);
-  
-  // Dynamic sums for global doughnut chart
-  const totalAchatPoussins = bandes.reduce((acc, b) => acc + b.prix_achat_global, 0);
-  const totalAliment = consommations.reduce((acc, c) => acc + c.montant, 0);
-  const totalSante = santeOps.reduce((acc, s) => acc + s.montant, 0);
+  const filteredConsommations = selectedBandeId === "all"
+    ? consommations
+    : consommations.filter((c) => c.bande_id === selectedBandeId);
+
+  const filteredSanteOps = selectedBandeId === "all"
+    ? santeOps
+    : santeOps.filter((s) => s.bande_id === selectedBandeId);
+
+  const filteredSorties = selectedBandeId === "all"
+    ? sorties
+    : sorties.filter((s) => s.bande_id === selectedBandeId);
+
+  const selectedKPIs = filteredBandes.map((b) => {
+    const bc = consommations.filter((c) => c.bande_id === b.id);
+    const bs = santeOps.filter((s) => s.bande_id === b.id);
+    const bso = sorties.filter((s) => s.bande_id === b.id);
+    return { bande: b, kpi: computeKPIs(b, bc, bs, bso) };
+  });
+
+  const computedKPIs = selectedKPIs.map((x) => x.kpi);
+
+  const totalVolailles = selectedBandeId === "all"
+    ? allKPIs
+        .filter((x) => x.bande.statut === "actif")
+        .reduce((acc, x) => acc + x.kpi.volaillesActuelles, 0)
+    : (selectedKPIs[0]?.bande.statut === "actif"
+        ? selectedKPIs[0]?.kpi.volaillesActuelles
+        : selectedKPIs[0]?.kpi.survivants || 0);
+
+  const effectifSubtext = selectedBandeId === "all"
+    ? `${bandesActives.length} bande(s) active(s)`
+    : `Statut : ${selectedKPIs[0]?.bande.statut === "actif" ? "Actif" : "Clôturé"}`;
+
+  // Dynamic sums for global/filtered cards & chart
+  const totalAchatPoussins = filteredBandes.reduce((acc, b) => acc + b.prix_achat_global, 0);
+  const totalAliment = filteredConsommations.reduce((acc, c) => acc + c.montant, 0);
+  const totalSante = filteredSanteOps.reduce((acc, s) => acc + s.montant, 0);
   
   const totalDepenses = totalAchatPoussins + totalAliment + totalSante;
-  const totalRevenu = globalKPIs.reduce((acc, k) => acc + k.revenuGenere, 0);
+  const totalRevenu = computedKPIs.reduce((acc, k) => acc + k.revenuGenere, 0);
   const totalMarge = totalRevenu - totalDepenses;
-  const totalDeces = globalKPIs.reduce((acc, k) => acc + k.totalDeces, 0);
+  const totalDeces = computedKPIs.reduce((acc, k) => acc + k.totalDeces, 0);
+
+  const netBilanSubtext = selectedBandeId === "all"
+    ? (totalMarge >= 0 ? "Bénéfice global actuel" : "Déficit global actuel")
+    : (totalMarge >= 0 ? "Bénéfice actuel du lot" : "Déficit actuel du lot");
+
+  const greetingSubtext = selectedBandeId === "all"
+    ? (bandesActives.length > 0
+        ? `Votre élevage compte actuellement ${totalVolailles.toLocaleString("fr-FR")} sujets actifs répartis sur ${bandesActives.length} lot${bandesActives.length > 1 ? "s" : ""}.`
+        : "Aucun lot actif pour le moment. Lancer un lot pour démarrer.")
+    : (() => {
+        const selected = selectedKPIs[0];
+        if (!selected) return "";
+        return `Lot "${selected.bande.nom_lot}" · ${selected.bande.race} · Âge: J+${selected.kpi.ageBande} jours · ${
+          selected.bande.statut === "actif"
+            ? `${selected.kpi.volaillesActuelles.toLocaleString("fr-FR")} sujets actifs`
+            : `Clôturé avec ${selected.kpi.survivants.toLocaleString("fr-FR")} survivants`
+        }.`;
+      })();
 
   const quickLinks = [
     { label: "Nouvelle bande", href: "/bandes/nouvelle", icon: Bird, desc: "Lancer un nouveau lot", color: "hover:border-brand-300" },
@@ -78,6 +131,10 @@ export default function DashboardPage() {
     (x) => x.bande.statut === "actif" && x.kpi.ageBande >= 45
   );
 
+  const displayedKPIs = selectedBandeId === "all"
+    ? allKPIs
+    : allKPIs.filter((x) => x.bande.id === selectedBandeId);
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Dynamic Header Greeting */}
@@ -91,16 +148,41 @@ export default function DashboardPage() {
             Bonjour ! <Sun className="text-amber-500 animate-pulse" size={24} />
           </h1>
           <p className="text-xs text-gray-500 mt-1 font-medium">
-            {bandesActives.length > 0
-              ? `Votre élevage compte actuellement ${totalVolailles.toLocaleString("fr-FR")} sujets actifs répartis sur ${bandesActives.length} lot${bandesActives.length > 1 ? "s" : ""}.`
-              : "Aucun lot actif pour le moment. Lancer un lot pour démarrer."}
+            {greetingSubtext}
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-2xl border border-gray-200/60 shadow-sm">
-          <Clock size={14} className="text-gray-400" />
-          <span className="text-xs text-gray-600 font-bold">
-            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-          </span>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Dropdown de filtrage par bande */}
+          <div className="relative">
+            <select
+              value={selectedBandeId}
+              onChange={(e) => setSelectedBandeId(e.target.value)}
+              className="appearance-none bg-white pl-9 pr-8 py-2 rounded-2xl border border-gray-200 hover:border-brand-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 text-xs font-bold text-gray-700 shadow-sm transition-all cursor-pointer outline-none"
+            >
+              <option value="all">Tous les lots</option>
+              {bandes.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.nom_lot} ({b.statut === "actif" ? "Actif" : "Clôturé"})
+                </option>
+              ))}
+            </select>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <Bird size={14} className="text-brand-500" />
+            </div>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <svg className="w-3.5 h-3.5 fill-current opacity-70" viewBox="0 0 20 20">
+                <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-gray-50 px-3.5 py-2 rounded-2xl border border-gray-200/60 shadow-sm">
+            <Clock size={14} className="text-gray-400" />
+            <span className="text-xs text-gray-600 font-bold">
+              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -170,10 +252,10 @@ export default function DashboardPage() {
 
         {/* KPI Cards section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard label="Effectif vivant" value={totalVolailles.toLocaleString("fr-FR")} sub={`${bandesActives.length} bande(s) active(s)`} icon={Bird} color="bg-gradient-to-br from-emerald-50 to-white text-emerald-950 border border-emerald-100" iconColor="bg-emerald-100/80 text-emerald-700" />
+          <KPICard label="Effectif vivant" value={totalVolailles.toLocaleString("fr-FR")} sub={effectifSubtext} icon={Bird} color="bg-gradient-to-br from-emerald-50 to-white text-emerald-950 border border-emerald-100" iconColor="bg-emerald-100/80 text-emerald-700" />
           <KPICard label="Total charges" value={formatMontant(totalDepenses)} sub={`${formatMontant(totalAliment)} alimentation`} icon={Banknote} color="bg-gradient-to-br from-red-50 to-white text-red-950 border border-red-100" iconColor="bg-red-100/80 text-red-700" />
           <KPICard label="Revenus cumulés" value={formatMontant(totalRevenu)} sub={`${totalDeces} décès totaux`} icon={TrendingUp} color="bg-gradient-to-br from-blue-50 to-white text-blue-950 border border-blue-100" iconColor="bg-blue-100/80 text-blue-700" />
-          <KPICard label="Bilan net" value={formatMontant(totalMarge)} sub={totalMarge >= 0 ? "Bénéfice global actuel" : "Déficit global actuel"} icon={Activity} color={totalMarge >= 0 ? "bg-gradient-to-br from-forest-50 to-white text-forest-950 border border-forest-100" : "bg-gradient-to-br from-orange-50 to-white text-orange-950 border border-orange-100"} iconColor={totalMarge >= 0 ? "bg-forest-100/80 text-forest-700" : "bg-orange-100/80 text-orange-700"} alert={totalMarge < 0} />
+          <KPICard label="Bilan net" value={formatMontant(totalMarge)} sub={netBilanSubtext} icon={Activity} color={totalMarge >= 0 ? "bg-gradient-to-br from-forest-50 to-white text-forest-950 border border-forest-100" : "bg-gradient-to-br from-orange-50 to-white text-orange-950 border border-orange-100"} iconColor={totalMarge >= 0 ? "bg-forest-100/80 text-forest-700" : "bg-orange-100/80 text-orange-700"} alert={totalMarge < 0} />
         </div>
 
         {/* Global charges analysis and quick links */}
@@ -222,14 +304,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Bands tracking list */}
-        {allKPIs.length > 0 && (
+        {displayedKPIs.length > 0 && (
           <div>
             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <Bird size={15} className="text-emerald-500" />
               Suivi détaillé des lots
             </h2>
             <div className="space-y-4">
-              {allKPIs.map(({ bande, kpi }) => {
+              {displayedKPIs.map(({ bande, kpi }) => {
                 const mortaliteOk = kpi.tauxMortalite < 3;
                 const standardBroilerCycle = 45; // standard market maturity in days (45 days nominal)
                 const progressPct = Math.min(100, (kpi.ageBande / standardBroilerCycle) * 100);
