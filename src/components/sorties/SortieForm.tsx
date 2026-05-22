@@ -12,6 +12,7 @@ interface SortieFormProps {
   bandeId?: string;
   onSuccess: () => void;
   onCancel: () => void;
+  onlyVente?: boolean;
 }
 
 const defaultForm = (bandeId: string): SortieFormData => ({
@@ -24,7 +25,7 @@ const defaultForm = (bandeId: string): SortieFormData => ({
   montant_total: 0,
 });
 
-export function SortieForm({ bandeId = "", onSuccess, onCancel }: SortieFormProps) {
+export function SortieForm({ bandeId = "", onSuccess, onCancel, onlyVente = false }: SortieFormProps) {
   const { bandes, addSortie } = useBandesStore();
   const [form, setForm] = useState<SortieFormData>(defaultForm(bandeId));
   const [loading, setLoading] = useState(false);
@@ -102,16 +103,25 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel }: SortieFormProp
           error={errors.date}
         />
 
-        <Select
-          label="Motif *"
-          name="motif"
-          value={form.motif}
-          onChange={handleChange}
-        >
-          {(["vente", "décès"] as MotifSortie[]).map((m) => (
-            <option key={m} value={m}>{m === "vente" ? "💰 Vente" : "💀 Décès"}</option>
-          ))}
-        </Select>
+        {onlyVente ? (
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Motif</label>
+            <div className="px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-600 font-medium">
+              💰 Vente
+            </div>
+          </div>
+        ) : (
+          <Select
+            label="Motif *"
+            name="motif"
+            value={form.motif}
+            onChange={handleChange}
+          >
+            {(["vente", "décès"] as MotifSortie[]).map((m) => (
+              <option key={m} value={m}>{m === "vente" ? "💰 Vente" : "💀 Décès"}</option>
+            ))}
+          </Select>
+        )}
 
         <Input
           label="Quantité *"

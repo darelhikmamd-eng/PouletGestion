@@ -147,6 +147,7 @@ export default function BandesPage() {
               <SortieForm
                 onSuccess={() => setShowSortieModal(false)}
                 onCancel={() => setShowSortieModal(false)}
+                onlyVente={true}
               />
             </div>
           </div>
