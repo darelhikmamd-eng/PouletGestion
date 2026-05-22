@@ -113,12 +113,6 @@ export default function DashboardPage() {
         }.`;
       })();
 
-  const quickLinks = [
-    { label: "Nouvelle bande", href: "/bandes/nouvelle", icon: Bird, desc: "Lancer un nouveau lot", color: "hover:border-brand-300" },
-    { label: "Saisie Aliment", href: "/alimentation", icon: Wheat, desc: "Ajouter une consommation", color: "hover:border-blue-300" },
-    { label: "Saisie Santé", href: "/sante", icon: HeartPulse, desc: "Vacciner ou soigner", color: "hover:border-purple-300" },
-    { label: "Saisie Sortie", href: "/sorties", icon: TrendingDown, desc: "Déclarer vente ou décès", color: "hover:border-red-300" },
-  ];
 
   // Feed distribution data to doughnut chart
   const chartData = [
@@ -266,49 +260,22 @@ export default function DashboardPage() {
           <KPICard label="Bilan net" value={formatMontant(totalMarge)} sub={netBilanSubtext} icon={Activity} color={totalMarge >= 0 ? "bg-gradient-to-br from-forest-50 to-white text-forest-950 border border-forest-100" : "bg-gradient-to-br from-orange-50 to-white text-orange-950 border border-orange-100"} iconColor={totalMarge >= 0 ? "bg-forest-100/80 text-forest-700" : "bg-orange-100/80 text-orange-700"} alert={totalMarge < 0} />
         </div>
 
-        {/* Global charges analysis and quick links */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Doughnut Chart card */}
-          <div className="card p-5 lg:col-span-2 flex flex-col justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Activity size={15} className="text-brand-500" />
-                {doughnutChartTitle}
-              </h2>
-              <p className="text-xs text-gray-400 font-semibold mb-4">{doughnutChartSubtitle}</p>
-            </div>
-            {totalDepenses > 0 ? (
-              <SVGDoughnutChart data={chartData} />
-            ) : (
-              <div className="h-40 flex items-center justify-center border border-dashed border-gray-200 rounded-xl">
-                <p className="text-xs text-gray-400">Aucune dépense enregistrée</p>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions grid */}
-          <div className="flex flex-col justify-between gap-3">
+        {/* Global charges analysis */}
+        <div className="card p-5 flex flex-col justify-between">
+          <div>
             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-brand-500 animate-pulse" />
-              Pilotage rapide
+              <Activity size={15} className="text-brand-500" />
+              {doughnutChartTitle}
             </h2>
-            <div className="grid grid-cols-2 gap-3 flex-1">
-              {quickLinks.map(({ label, href, icon: Icon, desc, color }) => (
-                <Link key={label} href={href} className={`card p-4 transition-all duration-300 hover:shadow-md border border-gray-150 hover:-translate-y-0.5 flex flex-col justify-between group ${color}`}>
-                  <div className="w-8 h-8 rounded-lg bg-gray-150/60 group-hover:bg-brand-500/10 group-hover:scale-105 flex items-center justify-center transition-all duration-300">
-                    <Icon size={16} className="text-gray-500 group-hover:text-brand-600 transition-colors" strokeWidth={2} />
-                  </div>
-                  <div className="mt-3">
-                    <p className="text-xs font-black text-gray-800 tracking-tight flex items-center gap-0.5">
-                      {label}
-                      <ArrowRight size={10} className="opacity-0 group-hover:opacity-100 transition-opacity translate-x-0 group-hover:translate-x-0.5 duration-300" />
-                    </p>
-                    <p className="text-[10px] text-gray-400 font-semibold mt-0.5 leading-tight">{desc}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <p className="text-xs text-gray-400 font-semibold mb-4">{doughnutChartSubtitle}</p>
           </div>
+          {totalDepenses > 0 ? (
+            <SVGDoughnutChart data={chartData} />
+          ) : (
+            <div className="h-40 flex items-center justify-center border border-dashed border-gray-200 rounded-xl">
+              <p className="text-xs text-gray-400">Aucune dépense enregistrée</p>
+            </div>
+          )}
         </div>
 
         {/* Bands tracking list */}
