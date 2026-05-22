@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, Bird, Search } from "lucide-react";
+import { Plus, Bird, Search, XCircle, TrendingDown } from "lucide-react";
 import { BandeCard } from "@/components/bandes/BandeCard";
 import { useBandesStore } from "@/store/useBandesStore";
+import { SortieForm } from "@/components/sorties/SortieForm";
 
 type Filter = "tous" | "actif" | "cloture";
 
@@ -12,6 +13,7 @@ export default function BandesPage() {
   const { bandes, cloturerBande } = useBandesStore();
   const [filter, setFilter] = useState<Filter>("tous");
   const [search, setSearch] = useState("");
+  const [showSortieModal, setShowSortieModal] = useState(false);
 
   const filtered = bandes.filter((b) => {
     const matchFilter = filter === "tous" || b.statut === filter;
@@ -38,14 +40,24 @@ export default function BandesPage() {
             {bandes.length} lot{bandes.length > 1 ? "s" : ""} enregistré{bandes.length > 1 ? "s" : ""}
           </p>
         </div>
-        <Link
-          href="/bandes/nouvelle"
-          className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
-        >
-          <Plus size={16} strokeWidth={2.5} />
-          <span className="hidden sm:inline">Nouvelle bande</span>
-          <span className="sm:hidden">Nouveau</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowSortieModal(true)}
+            className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm cursor-pointer"
+          >
+            <Plus size={16} className="text-red-500" strokeWidth={2.5} />
+            <span className="hidden sm:inline">Nouvelle sortie</span>
+            <span className="sm:hidden">Sortie</span>
+          </button>
+          <Link
+            href="/bandes/nouvelle"
+            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            <span className="hidden sm:inline">Nouvelle bande</span>
+            <span className="sm:hidden">Nouveau</span>
+          </Link>
+        </div>
       </div>
 
       <div className="px-4 lg:px-8 space-y-4">
@@ -115,6 +127,31 @@ export default function BandesPage() {
           </div>
         )}
       </div>
+
+      {showSortieModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-300">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                <TrendingDown size={16} className="text-red-500" />
+                Enregistrer une sortie
+              </h3>
+              <button
+                onClick={() => setShowSortieModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="p-6">
+              <SortieForm
+                onSuccess={() => setShowSortieModal(false)}
+                onCancel={() => setShowSortieModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
