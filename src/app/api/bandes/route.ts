@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, ensureTablesExist } from "@/lib/db";
 import { bandes } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { generateId } from "@/lib/auth";
@@ -10,6 +10,7 @@ function getFarmId(req: NextRequest): string | null {
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureTablesExist();
     const farmId = getFarmId(req);
     if (!farmId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
@@ -24,6 +25,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureTablesExist();
     const farmId = getFarmId(req);
     if (!farmId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 

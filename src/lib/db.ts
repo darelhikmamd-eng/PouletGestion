@@ -15,13 +15,16 @@ export function getSql() {
 }
 
 /**
- * Auto-migration : crée toutes les tables si elles n'existent pas encore.
- * Appelée automatiquement au premier appel des routes auth (register / login).
+ * Auto-migration complète :
+ * 1. Crée les tables si elles n'existent pas
+ * 2. Ajoute farm_id aux tables existantes qui ne l'ont pas encore (ALTER TABLE)
+ * 3. Supprime les anciennes données sans farm_id pour garantir l'isolation
  * Idempotente — peut être exécutée plusieurs fois sans risque.
  */
 export async function ensureTablesExist(): Promise<void> {
   const sql = getSql();
 
+  // ── 1. Table users ──────────────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -38,10 +41,11 @@ export async function ensureTablesExist(): Promise<void> {
     )
   `;
 
+  // ── 2. Table bandes ─────────────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS bandes (
       id TEXT PRIMARY KEY,
-      farm_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      farm_id TEXT,
       nom_lot TEXT NOT NULL,
       date_debut TEXT NOT NULL,
       objectif TEXT NOT NULL,
@@ -54,11 +58,20 @@ export async function ensureTablesExist(): Promise<void> {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  // Ajouter farm_id si elle n'existe pas (table pré-existante sans farm_id)
+  try {
+    await sql`ALTER TABLE bandes ADD COLUMN IF NOT EXISTS farm_id TEXT`;
+  } catch { /* ignore */ }
+  // Supprimer les anciennes bandes sans farm_id (données orphelines sans compte)
+  try {
+    await sql`DELETE FROM bandes WHERE farm_id IS NULL OR farm_id = ''`;
+  } catch { /* ignore */ }
 
+  // ── 3. Table consommations ──────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS consommations (
       id TEXT PRIMARY KEY,
-      farm_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      farm_id TEXT,
       bande_id TEXT NOT NULL REFERENCES bandes(id) ON DELETE CASCADE,
       date TEXT NOT NULL,
       type_aliment TEXT NOT NULL,
@@ -68,11 +81,18 @@ export async function ensureTablesExist(): Promise<void> {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  try {
+    await sql`ALTER TABLE consommations ADD COLUMN IF NOT EXISTS farm_id TEXT`;
+  } catch { /* ignore */ }
+  try {
+    await sql`DELETE FROM consommations WHERE farm_id IS NULL OR farm_id = ''`;
+  } catch { /* ignore */ }
 
+  // ── 4. Table sante ──────────────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS sante (
       id TEXT PRIMARY KEY,
-      farm_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      farm_id TEXT,
       bande_id TEXT NOT NULL REFERENCES bandes(id) ON DELETE CASCADE,
       date TEXT NOT NULL,
       type_op TEXT NOT NULL,
@@ -82,11 +102,18 @@ export async function ensureTablesExist(): Promise<void> {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  try {
+    await sql`ALTER TABLE sante ADD COLUMN IF NOT EXISTS farm_id TEXT`;
+  } catch { /* ignore */ }
+  try {
+    await sql`DELETE FROM sante WHERE farm_id IS NULL OR farm_id = ''`;
+  } catch { /* ignore */ }
 
+  // ── 5. Table sorties ────────────────────────────────────────────────────────
   await sql`
     CREATE TABLE IF NOT EXISTS sorties (
       id TEXT PRIMARY KEY,
-      farm_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      farm_id TEXT,
       bande_id TEXT NOT NULL REFERENCES bandes(id) ON DELETE CASCADE,
       date TEXT NOT NULL,
       motif TEXT NOT NULL,
@@ -97,8 +124,14 @@ export async function ensureTablesExist(): Promise<void> {
       created_at TIMESTAMP DEFAULT NOW()
     )
   `;
+  try {
+    await sql`ALTER TABLE sorties ADD COLUMN IF NOT EXISTS farm_id TEXT`;
+  } catch { /* ignore */ }
+  try {
+    await sql`DELETE FROM sorties WHERE farm_id IS NULL OR farm_id = ''`;
+  } catch { /* ignore */ }
 
-  // Indexes for performance (ignore if already exist)
+  // ── 6. Index performances ───────────────────────────────────────────────────
   try { await sql`CREATE INDEX IF NOT EXISTS idx_bandes_farm_id ON bandes(farm_id)`; } catch { /* ignore */ }
   try { await sql`CREATE INDEX IF NOT EXISTS idx_consommations_farm_id ON consommations(farm_id)`; } catch { /* ignore */ }
   try { await sql`CREATE INDEX IF NOT EXISTS idx_sante_farm_id ON sante(farm_id)`; } catch { /* ignore */ }
