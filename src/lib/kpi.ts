@@ -112,3 +112,88 @@ export function formatDateLong(dateStr: string): string {
     year: "numeric",
   }).format(new Date(dateStr));
 }
+
+export interface ProphylaxisMilestone {
+  jour: number;
+  label: string;
+  type: string;
+  maladie: string;
+  note: string;
+}
+
+export const PROPHYLAXIS_SCHEDULE: ProphylaxisMilestone[] = [
+  { jour: 1, label: "Newcastle & Bronchite + Anti-stress", type: "Vaccination", maladie: "Newcastle", note: "Vaccin HB1/H120 + vitamines de démarrage." },
+  { jour: 5, label: "Maladie de Gumboro (1er passage)", type: "Vaccination", maladie: "Gumboro", note: "Vaccin Gumboro intermédiaire en eau de boisson." },
+  { jour: 12, label: "Rappel Maladie de Gumboro", type: "Vaccination", maladie: "Gumboro", note: "Deuxième passage Gumboro pour immunité robuste." },
+  { jour: 18, label: "Rappel Newcastle + Bronchite", type: "Vaccination", maladie: "Newcastle", note: "Vaccin La Sota en eau de boisson pour protection durable." },
+  { jour: 28, label: "Anti-coccidien (Prévention)", type: "Traitement Curatif", maladie: "Coccidiose", note: "Traitement préventif anticoccidien pendant 3-5 jours." },
+  { jour: 35, label: "Vitamines de Finition", type: "Vitamines", maladie: "Autre", note: "Vitamines de croissance pour optimiser le poids corporel final." }
+];
+
+export interface ClimateRecommendation {
+  tempMin: number;
+  tempMax: number;
+  humiditeMin: number;
+  humiditeMax: number;
+  eclairageHeures: number;
+  conseil: string;
+}
+
+export function getClimateRecommendation(ageJours: number): ClimateRecommendation {
+  if (ageJours <= 3) {
+    return {
+      tempMin: 32,
+      tempMax: 33,
+      humiditeMin: 60,
+      humiditeMax: 70,
+      eclairageHeures: 23,
+      conseil: "Période de démarrage très critique. Chauffage stable requis, évitez absolument les courants d'air. Donnez de l'eau tiède avec vitamines anti-stress.",
+    };
+  } else if (ageJours <= 7) {
+    return {
+      tempMin: 30,
+      tempMax: 31,
+      humiditeMin: 60,
+      humiditeMax: 70,
+      eclairageHeures: 22,
+      conseil: "Transition douce vers l'aliment croissance. Nettoyez régulièrement les assiettes de démarrage pour enlever la poussière et stimuler l'appétit.",
+    };
+  } else if (ageJours <= 14) {
+    return {
+      tempMin: 28,
+      tempMax: 29,
+      humiditeMin: 60,
+      humiditeMax: 70,
+      eclairageHeures: 20,
+      conseil: "Rappel vaccinal Gumboro proche. Vérifiez la sécheresse et l'épaisseur de la litière. Remplacez toute litière humide par du copeau propre.",
+    };
+  } else if (ageJours <= 21) {
+    return {
+      tempMin: 25,
+      tempMax: 26,
+      humiditeMin: 50,
+      humiditeMax: 60,
+      eclairageHeures: 18,
+      conseil: "Phase de croissance rapide. La ventilation doit être augmentée pour évacuer les odeurs d'ammoniac tout en évitant le refroidissement direct.",
+    };
+  } else if (ageJours <= 28) {
+    return {
+      tempMin: 22,
+      tempMax: 23,
+      humiditeMin: 50,
+      humiditeMax: 60,
+      eclairageHeures: 16,
+      conseil: "Rappel vaccinal Newcastle. Ajustez la hauteur des abreuvoirs et mangeoires au niveau du dos des sujets pour limiter le gaspillage.",
+    };
+  } else {
+    return {
+      tempMin: 20,
+      tempMax: 21,
+      humiditeMin: 50,
+      humiditeMax: 60,
+      eclairageHeures: 16,
+      conseil: "Phase de finition. Prévenez le stress thermique les jours de forte chaleur. IMPORTANT : Aucun traitement médicamenteux 5 jours avant abattage.",
+    };
+  }
+}
+
