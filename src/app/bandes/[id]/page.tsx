@@ -1,13 +1,14 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, Bird, Calendar, Users, Phone, Banknote,
   Tag, CheckCircle2, XCircle, Wheat, HeartPulse, TrendingDown,
   Target, Activity, AlertTriangle, Clock, TrendingUp, ShoppingCart,
-  Package, Lightbulb, Scale, Trash2, ShieldCheck, Thermometer, Droplets, Sun, Sparkles
+  Package, Lightbulb, Scale, Trash2, ShieldCheck, Thermometer, Droplets, Sun, Sparkles,
+  Camera, Upload, Plus
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
@@ -16,7 +17,9 @@ import {
   formatMontant, 
   formatDateLong,
   PROPHYLAXIS_SCHEDULE,
-  getClimateRecommendation
+  getClimateRecommendation,
+  getFeedRecommendation,
+  DIAGNOSTIC_IA_DISEASES
 } from "@/lib/kpi";
 import { SVGDoughnutChart } from "@/components/ui/SVGDoughnutChart";
 import { SVGLineChart } from "@/components/ui/SVGLineChart";
@@ -47,11 +50,120 @@ export default function BandeDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { getBandeById, cloturerBande, getConsommationsByBande, getSanteByBande, getSortiesByBande,
-    deleteConsommation, deleteSanteOp, deleteSortie } = useBandesStore();
+  const { 
+    getBandeById, 
+    cloturerBande, 
+    getConsommationsByBande, 
+    getSanteByBande, 
+    getSortiesByBande,
+    deleteConsommation, 
+    deleteSanteOp, 
+    deleteSortie,
+    addSanteOp
+  } = useBandesStore();
 
   const bande = getBandeById(id);
   if (!bande) return notFound();
+
+  // Advanced co-pilots state management
+  const [activeTab, setActiveTab] = useState<"meteo" | "alimentation" | "ia">("ia");
+  
+  // 1. Weather Co-pilot
+  const [selectedTown, setSelectedTown] = useState("Abidjan (CI)");
+  const [weather, setWeather] = useState<{ temp: number; humidity: number } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+
+  const TOWNS = [
+    { name: "Abidjan (CI)", lat: 5.36, lon: -4.00 },
+    { name: "Dakar (SN)", lat: 14.72, lon: -17.47 },
+    { name: "Bamako (ML)", lat: 12.63, lon: -8.00 },
+    { name: "Yamoussoukro (CI)", lat: 6.82, lon: -5.28 },
+    { name: "Bouaké (CI)", lat: 7.69, lon: -5.03 },
+  ];
+
+  useEffect(() => {
+    async function fetchWeather() {
+      const town = TOWNS.find(t => t.name === selectedTown) || TOWNS[0];
+      setWeatherLoading(true);
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${town.lat}&longitude=${town.lon}&current=temperature_2m,relative_humidity_2m`);
+        if (res.ok) {
+          const data = await res.json();
+          setWeather({
+            temp: data.current.temperature_2m,
+            humidity: data.current.relative_humidity_2m
+          });
+        }
+      } catch (err) {
+        console.error("Météo error", err);
+      } finally {
+        setWeatherLoading(false);
+      }
+    }
+    fetchWeather();
+  }, [selectedTown]);
+
+  // 2. IA Diagnostic Simulator
+  const [selectedSample, setSelectedSample] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanComplete, setScanComplete] = useState(false);
+  const [diagnosedDisease, setDiagnosedDisease] = useState<any>(null);
+  const [convalescenceList, setConvalescenceList] = useState<{ label: string; checked: boolean }[]>([]);
+  const [treatmentLogged, setTreatmentLogged] = useState(false);
+
+  const handleSampleClick = (diseaseId: string) => {
+    setSelectedSample(diseaseId);
+    setIsScanning(true);
+    setScanComplete(false);
+    setTreatmentLogged(false);
+    
+    setTimeout(() => {
+      setIsScanning(false);
+      setScanComplete(true);
+      const disease = DIAGNOSTIC_IA_DISEASES.find(d => d.id === diseaseId);
+      setDiagnosedDisease(disease);
+      
+      if (disease && disease.dureeConvalescenceJours > 0) {
+        setConvalescenceList([
+          { label: "Suivi quotidien de l'ingestion d'eau", checked: false },
+          { label: "Nettoyage et désinfection complète des mangeoires", checked: false },
+          { label: "Isolement total du compartiment infecté", checked: false },
+          { label: "Assèchement mécanique et chaulage de la litière", checked: false },
+          { label: "Vérification de l'absence de râles bronchiques", checked: false }
+        ]);
+      } else {
+        setConvalescenceList([]);
+      }
+    }, 2000);
+  };
+
+  const handleToggleConvalescence = (index: number) => {
+    setConvalescenceList(prev => prev.map((item, idx) => idx === index ? { ...item, checked: !item.checked } : item));
+  };
+
+  const handleLogTreatment = async () => {
+    if (!diagnosedDisease) return;
+    try {
+      let med = "Amprolium 20% (Anticoccidien)";
+      if (diagnosedDisease.id === "newcastle") med = "Oxytétracycline + Vitamines (Soutien)";
+      if (diagnosedDisease.id === "colibacillose") med = "Enrofloxacine 10% (Antibiotique)";
+      
+      await addSanteOp({
+        bande_id: id,
+        date: new Date().toISOString().split("T")[0],
+        type_op: "Traitement Curatif",
+        medicament: med,
+        maladie_cible: diagnosedDisease.nom,
+        montant: 4500, // Standard local pack cost
+      });
+      setTreatmentLogged(true);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const convalescenceCompletedCount = convalescenceList.filter(c => c.checked).length;
+  const convalescenceProgressPct = convalescenceList.length > 0 ? Math.round((convalescenceCompletedCount / convalescenceList.length) * 100) : 0;
 
   const consommations = getConsommationsByBande(id);
   const santeOps = getSanteByBande(id);
@@ -181,69 +293,516 @@ export default function BandeDetailPage({
           ))}
         </div>
 
-        {/* Adaptative Climate Guidance Widget */}
+        {/* Style block for radar scanner effect */}
+        <style>{`
+          @keyframes scan {
+            0% { top: 0%; opacity: 0.8; }
+            50% { top: 100%; opacity: 0.8; }
+            100% { top: 0%; opacity: 0.8; }
+          }
+          .animate-scanner {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(to right, transparent, #eab308, transparent);
+            box-shadow: 0 0 10px #eab308, 0 0 20px #eab308;
+            animation: scan 2s infinite ease-in-out;
+            pointer-events: none;
+          }
+        `}</style>
+
+        {/* 🛠️ CO-PILOTES EXPERTS MULTI-ONGLETS */}
         {isActive && (
-          <div className="card p-5 bg-gradient-to-br from-white to-gray-50/30 border border-gray-150">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-2 mb-4">
-              <div>
-                <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
-                  <Sun size={15} className="text-amber-500 animate-spin-slow" />
-                  Co-pilote Élevage — Guide Climat
-                </h2>
-                <p className="text-xs text-gray-400 font-semibold">Paramètres idéaux préconisés à J+{kpi.ageBande}</p>
-              </div>
-              <span className="text-[10px] bg-brand-500 text-slate-950 px-2 py-0.5 rounded-full font-black uppercase tracking-wider self-start sm:self-auto">Recommandations J+{kpi.ageBande}</span>
+          <div className="card overflow-hidden border border-brand-200/80 bg-white shadow-md transition-all duration-300">
+            {/* Header Onglets */}
+            <div className="flex border-b border-gray-150/80 bg-gray-50/50 p-2 gap-1 flex-wrap">
+              {[
+                { id: "meteo", label: "Météo Live & Climat", icon: Sun, color: "text-amber-600 bg-amber-50" },
+                { id: "alimentation", label: "Rationnement Cobb 500", icon: Wheat, color: "text-blue-600 bg-blue-50" },
+                { id: "ia", label: "Diagnostic Vision IA", icon: Camera, color: "text-brand-600 bg-brand-50" }
+              ].map((tab) => {
+                const isSelected = activeTab === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all duration-300 cursor-pointer border ${
+                      isSelected
+                        ? "bg-white border-gray-200 shadow-sm text-gray-900"
+                        : "border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-100/60"
+                    }`}
+                  >
+                    <Icon size={14} className={isSelected ? tab.color.split(" ")[0] : "text-gray-400"} strokeWidth={2.5} />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Temp recommendation */}
-              <div className="bg-white border border-gray-150 rounded-xl p-3.5 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
-                  <Thermometer size={18} strokeWidth={2.5} />
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Température</p>
-                  <p className="text-base font-black text-gray-800 mt-0.5">
-                    {climate.tempMin} - {climate.tempMax}°C
-                  </p>
-                </div>
-              </div>
+            {/* Contenu de l'onglet 1 : Météo Live & Climat */}
+            {activeTab === "meteo" && (
+              <div className="p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                  <div>
+                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sun size={15} className="text-amber-500" />
+                      Station Bioclimatique de l'Élevage
+                    </h3>
+                    <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                      Croisement en direct de la météo d'Open-Meteo avec les standards d'âge J+{kpi.ageBande}
+                    </p>
+                  </div>
 
-              {/* Humidity */}
-              <div className="bg-white border border-gray-150 rounded-xl p-3.5 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0">
-                  <Droplets size={18} strokeWidth={2.5} />
+                  {/* Town selector */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase">Localisation :</span>
+                    <select
+                      value={selectedTown}
+                      onChange={(e) => setSelectedTown(e.target.value)}
+                      className="text-xs font-black text-gray-700 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 shadow-sm cursor-pointer"
+                    >
+                      {TOWNS.map((t) => (
+                        <option key={t.name} value={t.name}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Humidité</p>
-                  <p className="text-base font-black text-gray-800 mt-0.5">
-                    {climate.humiditeMin} - {climate.humiditeMax}%
-                  </p>
-                </div>
-              </div>
 
-              {/* Lighting */}
-              <div className="bg-white border border-gray-150 rounded-xl p-3.5 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0">
-                  <Sun size={18} strokeWidth={2.5} />
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Durée Éclairage</p>
-                  <p className="text-base font-black text-gray-800 mt-0.5">
-                    {climate.eclairageHeures} h / 24h
-                  </p>
-                </div>
-              </div>
-            </div>
+                {/* Weather cards grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {/* Local weather condition card */}
+                  <div className="rounded-xl border border-gray-150 p-4 bg-gradient-to-b from-gray-50/50 to-white flex flex-col justify-between shadow-sm relative overflow-hidden">
+                    <span className="text-[8px] bg-amber-500/10 text-amber-700 border border-amber-200/50 px-2 py-0.5 rounded-full font-black uppercase tracking-wider absolute top-3 right-3 animate-pulse">En Direct API</span>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Météo Locale Réelle</p>
+                      <p className="text-[10px] text-gray-500 font-bold mt-1 truncate">{selectedTown}</p>
+                    </div>
+                    {weatherLoading ? (
+                      <div className="h-10 flex items-center gap-2 mt-4">
+                        <div className="w-2.5 h-2.5 bg-brand-500 rounded-full animate-bounce" />
+                        <span className="text-[10px] text-gray-400 font-semibold">Synchronisation...</span>
+                      </div>
+                    ) : weather ? (
+                      <div className="mt-4 flex items-baseline gap-2">
+                        <span className="text-2xl font-black text-gray-900">{weather.temp}°C</span>
+                        <span className="text-xs font-bold text-gray-500">/ {weather.humidity}% HR</span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-red-500 font-bold mt-4">Station météo injoignable</p>
+                    )}
+                  </div>
 
-            {/* Smart veterinarian advice */}
-            <div className="bg-amber-50/50 border border-amber-200/50 rounded-xl p-3.5 flex items-start gap-3">
-              <Lightbulb size={16} className="text-amber-500 flex-shrink-0 mt-0.5 animate-pulse" />
-              <div>
-                <p className="text-xs font-bold text-amber-900">Conseil technique de croissance :</p>
-                <p className="text-xs text-amber-800 font-semibold mt-1 leading-relaxed">{climate.conseil}</p>
+                  {/* Temp recommendation */}
+                  <div className={`rounded-xl border p-4 shadow-sm flex flex-col justify-between ${
+                    weather && (weather.temp > climate.tempMax || weather.temp < climate.tempMin) 
+                      ? "border-red-200 bg-red-50/20" 
+                      : "border-gray-150 bg-white"
+                  }`}>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Seuil Température Idéal</p>
+                      <p className="text-[10px] text-gray-500 font-bold mt-1">Recommandé pour J+{kpi.ageBande}</p>
+                    </div>
+                    <div className="mt-4 flex items-baseline gap-1.5">
+                      <Thermometer size={16} className="text-red-500" strokeWidth={2.5} />
+                      <span className="text-xl font-black text-gray-900">
+                        {climate.tempMin} - {climate.tempMax}°C
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Humidity recommendation */}
+                  <div className={`rounded-xl border p-4 shadow-sm flex flex-col justify-between ${
+                    weather && (weather.humidity > climate.humiditeMax || weather.humidity < climate.humiditeMin)
+                      ? "border-orange-200 bg-orange-50/20" 
+                      : "border-gray-150 bg-white"
+                  }`}>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Humidité Relative Cible</p>
+                      <p className="text-[10px] text-gray-500 font-bold mt-1">Optimale pour la litière</p>
+                    </div>
+                    <div className="mt-4 flex items-baseline gap-1.5">
+                      <Droplets size={16} className="text-blue-500" strokeWidth={2.5} />
+                      <span className="text-xl font-black text-gray-900">
+                        {climate.humiditeMin} - {climate.humiditeMax}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Lighting recommendation */}
+                  <div className="rounded-xl border border-gray-150 p-4 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Durée Éclairage Requise</p>
+                      <p className="text-[10px] text-gray-500 font-bold mt-1">Stimulation hypophysaire</p>
+                    </div>
+                    <div className="mt-4 flex items-baseline gap-1.5">
+                      <Clock size={16} className="text-amber-500" strokeWidth={2.5} />
+                      <span className="text-xl font-black text-gray-900">
+                        {climate.eclairageHeures} h <span className="text-[10px] text-gray-400 font-medium">/ 24h</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bioclimatic Threat / Stress Alert Cards */}
+                {weather && (
+                  <div className="space-y-2">
+                    {weather.temp > climate.tempMax && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-xl flex items-start gap-2.5 text-xs font-semibold shadow-sm">
+                        <AlertTriangle size={15} className="text-red-500 animate-bounce flex-shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="text-red-950 font-black block">Alerte Stress Thermique Critique !</strong>
+                          La température réelle ({weather.temp}°C) excède le seuil tolérable de {climate.tempMax}°C pour ce stade de croissance. Activez d'urgence la ventilation dynamique, disposez des glaçons dans les abreuvoirs et réduisez l'épaisseur de la litière.
+                        </div>
+                      </div>
+                    )}
+                    {weather.temp < climate.tempMin && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl flex items-start gap-2.5 text-xs font-semibold shadow-sm">
+                        <AlertTriangle size={15} className="text-blue-500 animate-bounce flex-shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="text-blue-950 font-black block">Alerte Refroidissement Brutal !</strong>
+                          La température réelle ({weather.temp}°C) est inférieure au minimum vital de {climate.tempMin}°C. Risque élevé de syndrome respiratoire et de colibacillose. Allumez les radiants de chauffage ou isolez les entrées d'air froid.
+                        </div>
+                      </div>
+                    )}
+                    {weather.humidity > climate.humiditeMax && (
+                      <div className="p-3 bg-orange-50 border border-orange-200 text-orange-800 rounded-xl flex items-start gap-2.5 text-xs font-semibold shadow-sm">
+                        <AlertTriangle size={15} className="text-orange-500 animate-bounce flex-shrink-0 mt-0.5" />
+                        <div>
+                          <strong className="text-orange-950 font-black block">Alerte Humidité Excessive (Litière Humide) !</strong>
+                          L'humidité relative ({weather.humidity}%) dépasse {climate.humiditeMax}%. Risque de fermentation anaérobie de la litière et déclenchement de la coccidiose. Ajoutez du copeau sec, évitez les éclaboussures d'abreuvoirs et augmentez la ventilation.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Climate advice footer */}
+                <div className="bg-amber-50/50 border border-amber-200/50 rounded-xl p-4 flex items-start gap-3">
+                  <Lightbulb size={16} className="text-amber-500 flex-shrink-0 mt-0.5 animate-pulse" />
+                  <div>
+                    <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">Conseil Technique de Croissance</h4>
+                    <p className="text-xs text-amber-800 font-semibold mt-1 leading-relaxed">{climate.conseil}</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Contenu de l'onglet 2 : Rationnement Cobb 500 */}
+            {activeTab === "alimentation" && (
+              <div className="p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                  <div>
+                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Wheat size={15} className="text-blue-500" />
+                      Algorithme d'Alimentation Prédictive
+                    </h3>
+                    <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                      Rationnement optimal calculé selon les standards nutritionnels Cobb 500
+                    </p>
+                  </div>
+                  <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full font-black uppercase tracking-wider self-start sm:self-auto">
+                    Cobb 500 Standard
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Daily per bird card */}
+                  <div className="rounded-xl border border-gray-150 p-4 bg-white shadow-sm flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Bird size={20} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Ration / Sujet / Jour</p>
+                      <p className="text-lg font-black text-gray-800 mt-0.5">{getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).besoinJournalierParSujetGrams} g</p>
+                    </div>
+                  </div>
+
+                  {/* Daily total lot card */}
+                  <div className="rounded-xl border border-gray-150 p-4 bg-white shadow-sm flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Wheat size={20} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Besoin Journalier Total (Lot)</p>
+                      <p className="text-lg font-black text-gray-800 mt-0.5">{getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).besoinJournalierTotalKg.toLocaleString("fr-FR")} kg</p>
+                    </div>
+                  </div>
+
+                  {/* Weekly bags card */}
+                  <div className="rounded-xl border border-gray-150 p-4 bg-white shadow-sm flex items-center gap-3.5 relative overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Package size={20} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Cumul Hebdomadaire Suggéré</p>
+                      <p className="text-lg font-black text-purple-950 mt-0.5">
+                        {getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).besoinHebdoTotalKg.toLocaleString("fr-FR")} kg
+                      </p>
+                      <p className="text-[9px] text-purple-500 font-bold mt-0.5">
+                        ≈ {(getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).besoinHebdoTotalKg / 50).toFixed(1)} sacs de 50 kg
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Growth Stage Visual Timeline */}
+                <div className="bg-gray-50/60 border border-gray-200 p-4 rounded-xl">
+                  <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                    <span>Stade de Croissance actuel</span>
+                    <span className="text-blue-600 font-black">{getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).typeAliment}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { range: "J+1 à J+14", label: "Démarrage", aliment: "Aliment Démarrage (Miette)", active: kpi.ageBande <= 14, color: "bg-blue-500" },
+                      { range: "J+15 à J+28", label: "Croissance", aliment: "Aliment Croissance (Granulé)", active: kpi.ageBande > 14 && kpi.ageBande <= 28, color: "bg-emerald-500" },
+                      { range: "J+29 à J+45+", label: "Finition", aliment: "Aliment Finition", active: kpi.ageBande > 28, color: "bg-purple-500" }
+                    ].map((stage) => (
+                      <div key={stage.label} className={`p-3 rounded-lg border text-center transition-all ${
+                        stage.active 
+                          ? "border-gray-300 bg-white shadow-sm ring-1 ring-brand-500/20" 
+                          : "border-transparent bg-gray-100 opacity-60"
+                      }`}>
+                        <p className={`text-[10px] font-black uppercase ${stage.active ? "text-gray-800" : "text-gray-400"}`}>{stage.label}</p>
+                        <p className="text-[9px] text-gray-400 font-bold mt-0.5">{stage.range}</p>
+                        <div className="h-1 bg-gray-100 rounded-full mt-2 overflow-hidden">
+                          <div className={`h-full ${stage.active ? stage.color : "bg-gray-200"}`} style={{ width: stage.active ? "100%" : "0%" }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ration advice */}
+                <div className="bg-blue-50/50 border border-blue-200/50 rounded-xl p-4 flex items-start gap-3">
+                  <Lightbulb size={16} className="text-blue-500 flex-shrink-0 mt-0.5 animate-pulse" />
+                  <div>
+                    <h4 className="text-xs font-black text-blue-900 uppercase tracking-wide">Directive d'alimentation du technicien avicole</h4>
+                    <p className="text-xs text-blue-800 font-semibold mt-1 leading-relaxed">
+                      {getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).conseil} 
+                      {kpi.volaillesActuelles > 0 && ` Pour votre cheptel de ${kpi.volaillesActuelles} têtes, distribuez de préférence la ration de ${getFeedRecommendation(kpi.ageBande, kpi.volaillesActuelles).besoinJournalierTotalKg.toFixed(1)} kg répartie sur deux repas quotidiens (matin frais et fin d'après-midi).`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Contenu de l'onglet 3 : Diagnostic Vision IA */}
+            {activeTab === "ia" && (
+              <div className="p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-150/80">
+                  <div>
+                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Camera size={15} className="text-brand-500 animate-pulse" />
+                      Scanner Intelligent de Pathologies (Vision IA)
+                    </h3>
+                    <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                      Simulation de Computer Vision entraînée sur Cobb 500 pour une détection terrain instantanée
+                    </p>
+                  </div>
+                  <Badge variant="warning" className="bg-brand-500 text-white animate-pulse border-none">BETA EXPERT</Badge>
+                </div>
+
+                {/* Image upload selector area */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                  {/* Selectors / Upload simulators (4 cols) */}
+                  <div className="md:col-span-4 flex flex-col gap-3">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sélectionnez une photo échantillon :</p>
+                    
+                    {[
+                      { id: "sain", name: "Fientes Normales", desc: "Sujets en bonne santé", color: "border-emerald-200 hover:border-emerald-500 bg-emerald-50/10 text-emerald-950" },
+                      { id: "coccidiose", name: "Fientes Rosâtres à Rouges", desc: "Indices hémorragiques de Coccidiose", color: "border-red-200 hover:border-red-500 bg-red-50/10 text-red-950" },
+                      { id: "newcastle", name: "Diarrhée Aqueuse Verdâtre", desc: "Symptôme viral de Newcastle", color: "border-purple-200 hover:border-purple-500 bg-purple-50/10 text-purple-950" },
+                      { id: "colibacillose", name: "Fientes Blanchâtres pâteuses", desc: "Signes d'infection à E. coli", color: "border-amber-200 hover:border-amber-500 bg-amber-50/10 text-amber-950" }
+                    ].map((sample) => (
+                      <button
+                        key={sample.id}
+                        onClick={() => handleSampleClick(sample.id)}
+                        disabled={isScanning}
+                        className={`card p-3 text-left border rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 group flex flex-col justify-between cursor-pointer ${
+                          selectedSample === sample.id ? "ring-2 ring-brand-500 " + sample.color : "border-gray-150"
+                        } ${isScanning ? "opacity-50 pointer-events-none" : ""}`}
+                      >
+                        <div>
+                          <p className="text-xs font-black tracking-tight">{sample.name}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5 leading-tight font-semibold">{sample.desc}</p>
+                        </div>
+                      </button>
+                    ))}
+
+                    <div className="border border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center bg-gray-50/30 opacity-60">
+                      <Upload size={18} className="text-gray-400" />
+                      <p className="text-[10px] text-gray-500 font-bold mt-1.5">Importer une photo personnalisée</p>
+                      <p className="text-[8px] text-gray-400 mt-0.5">Formats acceptés : PNG, JPG</p>
+                    </div>
+                  </div>
+
+                  {/* Scanning visualization and report area (8 cols) */}
+                  <div className="md:col-span-8 bg-gray-50/50 rounded-xl border border-gray-150 p-4 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
+                    {/* Scanner animation */}
+                    {isScanning && (
+                      <div className="absolute inset-0 bg-brand-500/10 flex flex-col items-center justify-center z-10">
+                        <div className="animate-scanner" />
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg animate-pulse text-brand-600 mb-3">
+                          <Camera size={24} />
+                        </div>
+                        <p className="text-xs font-black text-brand-700 uppercase tracking-widest animate-bounce">
+                          Analyse par convolution IA...
+                        </p>
+                        <p className="text-[9px] text-gray-400 font-semibold mt-1">Comparaison des biomarqueurs avec la base Cobb 500</p>
+                      </div>
+                    )}
+
+                    {/* Default state */}
+                    {!selectedSample && !isScanning && (
+                      <div className="text-center py-12 flex flex-col items-center justify-center">
+                        <div className="w-14 h-14 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center shadow-inner mb-4">
+                          <Camera size={28} />
+                        </div>
+                        <p className="text-sm font-black text-gray-800 tracking-tight">Aucun échantillon en cours d'analyse</p>
+                        <p className="text-xs text-gray-400 mt-1 font-semibold max-w-sm">
+                          Sélectionnez l'un des échantillons photographiques sur la gauche pour lancer la simulation d'analyse d'imagerie diagnostique.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Scan complete results */}
+                    {scanComplete && diagnosedDisease && !isScanning && (
+                      <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-gray-100">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-black uppercase text-gray-400">Pathologie Détectée</span>
+                              <Badge variant={diagnosedDisease.id === "sain" ? "success" : "error"}>
+                                {diagnosedDisease.id === "sain" ? "Sain" : "Alerte Sanitaire"}
+                              </Badge>
+                            </div>
+                            <h4 className="text-base font-black text-gray-900 tracking-tight mt-1 flex items-center gap-1.5">
+                              {diagnosedDisease.nom}
+                            </h4>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-xs font-black text-gray-400 block uppercase">Indice de Confiance</span>
+                            <span className={`text-xl font-black ${diagnosedDisease.id === "sain" ? "text-emerald-600" : "text-red-600"}`}>
+                              {diagnosedDisease.id === "sain" ? "99.8%" : "94.2%"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description Clinique</p>
+                          <p className="text-xs text-gray-600 font-semibold mt-1 leading-relaxed bg-white p-3 rounded-lg border border-gray-200/60 shadow-sm">{diagnosedDisease.description}</p>
+                        </div>
+
+                        {/* Symptoms & Urgency grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Symptoms */}
+                          <div className="bg-white/80 border border-gray-200/80 p-3.5 rounded-xl shadow-sm">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">Symptômes Observés</p>
+                            <ul className="space-y-1.5">
+                              {diagnosedDisease.symptomes.map((symptom: string) => (
+                                <li key={symptom} className="text-xs text-gray-600 font-semibold flex items-start gap-1.5">
+                                  <span className="text-brand-500 mt-0.5">•</span>
+                                  {symptom}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Urgency measures */}
+                          <div className="bg-white/80 border border-gray-200/80 p-3.5 rounded-xl shadow-sm">
+                            <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">Mesures d'Urgence Immédiates</p>
+                            <ul className="space-y-1.5">
+                              {diagnosedDisease.mesuresUrgence.map((measure: string) => (
+                                <li key={measure} className="text-xs text-red-700 font-semibold flex items-start gap-1.5">
+                                  <span className="text-red-500 mt-0.5">!</span>
+                                  {measure}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+
+                        {/* Treatment recommend and convalescence log */}
+                        <div className="rounded-xl border border-brand-200 bg-brand-50/20 p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">Traitement Technico-Médical Suggéré</p>
+                              <p className="text-xs text-gray-700 font-black mt-1 leading-relaxed">{diagnosedDisease.traitementPropose}</p>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase mt-1.5">
+                                Durée d'isolement recommandée : {diagnosedDisease.dureeConvalescenceJours} jours
+                              </p>
+                            </div>
+                            
+                            {diagnosedDisease.dureeConvalescenceJours > 0 && (
+                              <div className="self-start sm:self-auto flex-shrink-0">
+                                {treatmentLogged ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm">
+                                    <CheckCircle2 size={12} /> Loggué au Registre
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={handleLogTreatment}
+                                    className="px-3.5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-black transition-all duration-200 shadow-md shadow-brand-500/25 flex items-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Plus size={14} /> Loguer le traitement
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 🩺 CONVALESCENCE PROGRESS LOG */}
+                          {diagnosedDisease.dureeConvalescenceJours > 0 && convalescenceList.length > 0 && (
+                            <div className="mt-4 pt-3.5 border-t border-brand-100 space-y-3">
+                              <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                <span>Suivi Quotidien de Convalescence</span>
+                                <span className="text-brand-600 font-black">{convalescenceProgressPct}% validé</span>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="h-1.5 bg-gray-200/50 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-brand-500 rounded-full transition-all duration-500"
+                                  style={{ width: `${convalescenceProgressPct}%` }}
+                                />
+                              </div>
+
+                              {/* Interactive symptom checkoff */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                {convalescenceList.map((item, idx) => (
+                                  <button
+                                    key={item.label}
+                                    onClick={() => handleToggleConvalescence(idx)}
+                                    className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs font-semibold border transition-all ${
+                                      item.checked 
+                                        ? "bg-white border-brand-300 text-gray-800" 
+                                        : "bg-transparent border-gray-150 text-gray-500 hover:bg-white"
+                                    } cursor-pointer`}
+                                  >
+                                    <span className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
+                                      item.checked ? "bg-brand-500 border-brand-500 text-white" : "border-gray-300 bg-white"
+                                    }`}>
+                                      {item.checked && <CheckCircle2 size={10} className="text-white" />}
+                                    </span>
+                                    <span className="truncate">{item.label}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

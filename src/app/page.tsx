@@ -32,7 +32,7 @@ function KPICard({
 }
 
 export default function DashboardPage() {
-  const { bandes, consommations, santeOps, sorties } = useBandesStore();
+  const { bandes, consommations, santeOps, sorties, cloturerBande } = useBandesStore();
 
   const bandesActives = bandes.filter((b) => b.statut === "actif");
   const bandesCloturees = bandes.filter((b) => b.statut === "cloture");
@@ -74,6 +74,10 @@ export default function DashboardPage() {
     { label: "Santé & Hygiène", value: totalSante, color: "text-purple-500", strokeColor: "#a855f7" },
   ];
 
+  const bandsReadyForTransition = allKPIs.filter(
+    (x) => x.bande.statut === "actif" && x.kpi.ageBande >= 45
+  );
+
   return (
     <div className="max-w-5xl mx-auto">
       {/* Dynamic Header Greeting */}
@@ -101,6 +105,69 @@ export default function DashboardPage() {
       </div>
 
       <div className="px-4 lg:px-8 space-y-6 pb-12">
+        {/* Bandeau d'alerte de transition de bande (Rotation) */}
+        {bandsReadyForTransition.length > 0 && (
+          <div className="card p-5 border-l-4 border-l-brand-500 bg-gradient-to-br from-brand-50/60 to-white/90 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+              <Bird size={120} className="text-brand-800" />
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-600 flex items-center justify-center flex-shrink-0 shadow-inner">
+                <AlertTriangle size={24} className="animate-pulse" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-black text-gray-900 tracking-tight flex items-center gap-2">
+                  <span>Cycle de production terminé (J+45+)</span>
+                  <Badge variant="warning" className="bg-brand-500 text-white border-none animate-pulse">
+                    Rotation recommandée
+                  </Badge>
+                </h3>
+                <p className="text-xs text-gray-600 font-semibold mt-1.5 leading-relaxed max-w-3xl">
+                  Le cycle nominal de <strong className="text-brand-700">45 jours</strong> a été atteint pour certains de vos lots.
+                  Prolonger le cycle au-delà dégrade l'<strong>Indice de Consommation (FCR)</strong> : les poulets consomment davantage d'aliment de finition pour un gain de muscle très ralenti, réduisant vos marges nettes.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  {bandsReadyForTransition.map(({ bande, kpi }) => (
+                    <div key={bande.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-white/80 border border-gray-150 shadow-sm gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center font-bold text-xs text-gray-700">
+                          J+{kpi.ageBande}
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-gray-800">{bande.nom_lot}</p>
+                          <p className="text-[10px] text-gray-500 font-semibold mt-0.5">
+                            {kpi.volaillesActuelles} sujets restants · FCR dégradé estimé : +{((kpi.ageBande - 45) * 0.08).toFixed(2)} pts
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            if (confirm(`Êtes-vous sûr de vouloir clôturer le lot "${bande.nom_lot}" pour lancer la rotation ?`)) {
+                              await cloturerBande(bande.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-xs font-black transition-all duration-200 shadow-sm cursor-pointer"
+                        >
+                          Clôturer le lot
+                        </button>
+                        <Link
+                          href={`/bandes/nouvelle?rotation_from=${encodeURIComponent(bande.nom_lot)}`}
+                          className="px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-black transition-all duration-200 shadow-md shadow-brand-500/25 flex items-center gap-1 cursor-pointer"
+                        >
+                          Lancer la rotation
+                          <ArrowRight size={12} />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* KPI Cards section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard label="Effectif vivant" value={totalVolailles.toLocaleString("fr-FR")} sub={`${bandesActives.length} bande(s) active(s)`} icon={Bird} color="bg-gradient-to-br from-emerald-50 to-white text-emerald-950 border border-emerald-100" iconColor="bg-emerald-100/80 text-emerald-700" />
@@ -164,7 +231,7 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {allKPIs.map(({ bande, kpi }) => {
                 const mortaliteOk = kpi.tauxMortalite < 3;
-                const standardBroilerCycle = 42; // standard market maturity in days
+                const standardBroilerCycle = 45; // standard market maturity in days (45 days nominal)
                 const progressPct = Math.min(100, (kpi.ageBande / standardBroilerCycle) * 100);
 
                 return (

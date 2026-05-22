@@ -95,4 +95,6 @@ export interface BandeKPIs {
   tauxMargeActuel: number;
   totalQuantiteKg: number;
   coutParKgEstime: number;
+  poidsMoyenEstime?: number;
+  fcr?: number;
 }

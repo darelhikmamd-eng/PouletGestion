@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Save, X } from "lucide-react";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -42,9 +42,22 @@ function validateForm(data: BandeFormData): BandeFormErrors {
 
 export function BandeForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rotationFrom = searchParams.get("rotation_from");
   const addBande = useBandesStore((s) => s.addBande);
 
   const [form, setForm] = useState<BandeFormData>(defaultForm);
+
+  useEffect(() => {
+    if (rotationFrom) {
+      const decoded = decodeURIComponent(rotationFrom);
+      setForm((prev) => ({
+        ...prev,
+        nom_lot: `Rotation après ${decoded}`,
+        race: "Cobb 500",
+      }));
+    }
+  }, [rotationFrom]);
   const [errors, setErrors] = useState<BandeFormErrors>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
