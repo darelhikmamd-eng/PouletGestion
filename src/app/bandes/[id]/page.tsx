@@ -50,7 +50,7 @@ export default function BandeDetailPage({
   if (!bande) return notFound();
 
   // Advanced co-pilots state management
-  const [activeTab, setActiveTab] = useState<"meteo" | "alimentation" | "ia">("ia");
+  const [activeTab, setActiveTab] = useState<"meteo" | "alimentation" | "ia" | "performances">("ia");
   const [showAlimentModal, setShowAlimentModal] = useState(false);
   const [showSanteModal, setShowSanteModal] = useState(false);
   const [showSortieModal, setShowSortieModal] = useState(false);
@@ -396,7 +396,8 @@ export default function BandeDetailPage({
               {[
                 { id: "meteo", label: "Météo Live & Climat", icon: Sun, color: "text-amber-600 bg-amber-50" },
                 { id: "alimentation", label: "Rationnement Cobb 500", icon: Wheat, color: "text-blue-600 bg-blue-50" },
-                { id: "ia", label: "Santé", icon: HeartPulse, color: "text-brand-600 bg-brand-50" }
+                { id: "ia", label: "Santé", icon: HeartPulse, color: "text-brand-600 bg-brand-50" },
+                { id: "performances", label: "Performances", icon: TrendingUp, color: "text-emerald-600 bg-emerald-50" }
               ].map((tab) => {
                 const isSelected = activeTab === tab.id;
                 const Icon = tab.icon;
@@ -945,130 +946,146 @@ export default function BandeDetailPage({
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Dynamic Feed Consumption Line Chart Widget */}
-        <div className="card p-5">
-          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-            <Wheat size={15} className="text-blue-500" />
-            Suivi chronologique de la consommation alimentaire
-          </h2>
-          <p className="text-xs text-gray-400 font-semibold mb-4">Quantité de nourriture distribuée (kg) par saisie</p>
-          <div className="w-full pt-2">
-            <SVGLineChart data={feedChartData} yLabel="kg" />
-          </div>
-        </div>
-
-        {/* Recommandations de vente à 20% & 30% */}
-        {kpi.volaillesActuelles > 0 && (
-          <div className="card p-5 border border-brand-200 bg-gradient-to-br from-white to-brand-50/10">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Lightbulb size={15} className="text-brand-500 animate-pulse" />
-              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Scénarios de rentabilité de vente</h2>
-            </div>
-            <p className="text-xs text-gray-400 font-semibold mb-4">
-              Estimations sur la base de <strong>{kpi.volaillesActuelles} sujets vivants</strong> restants · Seuil de rentabilité plancher : <strong>{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F/sujet</strong>
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-              {/* Plancher */}
-              <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 transition-all duration-300 hover:shadow-md">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Prix Plancher (0% gain)</span>
-                </div>
-                <p className="text-2xl font-black text-gray-700">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} <span className="text-xs font-semibold">F</span></p>
-                <p className="text-[10px] text-gray-400 font-semibold mt-1">par sujet</p>
-                <div className="mt-3 pt-3 border-t border-gray-200/80 text-[11px] text-gray-500">
-                  <p>Revenu total estimé :</p>
-                  <p className="text-sm font-extrabold text-gray-700 mt-0.5">{formatMontant(Math.round(kpi.seuilVenteParSujet) * kpi.volaillesActuelles)}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5 font-bold">Marge nette : 0 F</p>
-                </div>
-              </div>
-
-              {/* Marge 20% — Recommandé */}
-              <div className="rounded-xl border-2 border-brand-400 bg-brand-50/40 p-4 relative transition-all duration-300 hover:shadow-md">
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">Conseillé</div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-brand-500" />
-                  <span className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">Marge Cible +20%</span>
-                </div>
-                <p className="text-2xl font-black text-brand-700">{kpi.prixRecommande20.toLocaleString("fr-FR")} <span className="text-xs font-semibold">F</span></p>
-                <p className="text-[10px] text-brand-500 font-semibold mt-1">par sujet</p>
-                <div className="mt-3 pt-3 border-t border-brand-200/60 text-[11px] text-gray-600">
-                  <p>Revenu total estimé :</p>
-                  <p className="text-sm font-extrabold text-brand-800 mt-0.5">{formatMontant(kpi.prixRecommande20 * kpi.volaillesActuelles)}</p>
-                  <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Bénéfice : +{formatMontant(kpi.beneficePotentiel20)}</p>
-                </div>
-              </div>
-
-              {/* Marge 30% — Optimal */}
-              <div className="rounded-xl border border-emerald-300 bg-emerald-50/20 p-4 transition-all duration-300 hover:shadow-md">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Marge Optimale +30%</span>
-                </div>
-                <p className="text-2xl font-black text-emerald-700">{kpi.prixRecommande30.toLocaleString("fr-FR")} <span className="text-xs font-semibold">F</span></p>
-                <p className="text-[10px] text-emerald-500 font-semibold mt-1">par sujet</p>
-                <div className="mt-3 pt-3 border-t border-emerald-200 text-[11px] text-gray-600">
-                  <p>Revenu total estimé :</p>
-                  <p className="text-sm font-extrabold text-emerald-800 mt-0.5">{formatMontant(kpi.prixRecommande30 * kpi.volaillesActuelles)}</p>
-                  <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Bénéfice : +{formatMontant(kpi.beneficePotentiel30)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Comparaison vente unité vs gros */}
-            <div className="rounded-xl bg-gray-50/80 border border-gray-150 p-4">
-              <p className="text-xs font-bold text-gray-700 mb-3 flex items-center gap-1.5">
-                <ShoppingCart size={13} strokeWidth={2.5} />
-                Modes de commercialisation préconisés
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl p-3.5 border border-gray-200/80 shadow-sm flex flex-col justify-between">
+            {/* Contenu de l'onglet 4 : Performances */}
+            {activeTab === "performances" && (
+              <div className="p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
                   <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Package size={12} className="text-brand-500" strokeWidth={2.5} />
-                      <span className="text-xs font-bold text-gray-800">Vente Progressive au Détail</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400 font-semibold leading-tight mt-1">
-                      Idéale pour maximiser les profits en commercialisant directement auprès des particuliers au prix unitaire conseillé.
+                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <TrendingUp size={15} className="text-emerald-500" />
+                      Performances & Rentabilité
+                    </h3>
+                    <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                      Suivi alimentaire et scénarios de vente pour le lot actuel
                     </p>
                   </div>
-                  <p className="text-lg font-black text-brand-600 mt-3">{kpi.prixRecommande20.toLocaleString("fr-FR")} F <span className="text-[10px] text-gray-400 font-medium">/ sujet</span></p>
                 </div>
-                <div className="bg-white rounded-xl p-3.5 border border-gray-200/80 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <TrendingUp size={12} className="text-emerald-500" strokeWidth={2.5} />
-                      <span className="text-xs font-bold text-gray-800">Vente en Gros en un Seul Lot</span>
-                    </div>
-                    <p className="text-[10px] text-gray-400 font-semibold leading-tight mt-1">
-                      Remise de 5% intégrée. Vente rapide du lot entier à un grossiste, libérant le bâtiment d'élevage immédiatement sans risque de mévente.
-                    </p>
-                  </div>
-                  <p className="text-lg font-black text-emerald-600 mt-3">{kpi.prixGrosMarge20.toLocaleString("fr-FR")} F <span className="text-[10px] text-gray-400 font-medium">/ sujet</span></p>
-                </div>
-              </div>
-            </div>
 
-            {/* Revenu déjà généré */}
-            {kpi.revenuGenere > 0 && (
-              <div className={`mt-4 rounded-xl p-4 flex items-center justify-between shadow-sm ${kpi.marge >= 0 ? "bg-emerald-50/50 border border-emerald-100" : "bg-orange-50/50 border border-orange-100"}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.marge >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700"}`}>
-                    <Activity size={15} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-800">Bilan des ventes réelles</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{kpi.totalVendus} sujets vendus · {formatMontant(kpi.revenuGenere)} encaissés</p>
+                {/* Graphique consommation alimentaire */}
+                <div>
+                  <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                    <Wheat size={13} className="text-blue-500" />
+                    Suivi chronologique de la consommation alimentaire
+                  </h4>
+                  <p className="text-[10px] text-gray-400 font-semibold mb-3">Quantité de nourriture distribuée (kg) par saisie</p>
+                  <div className="w-full pt-2">
+                    <SVGLineChart data={feedChartData} yLabel="kg" />
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-base font-black ${kpi.marge >= 0 ? "text-emerald-700" : "text-orange-700"}`}>{kpi.marge >= 0 ? "+" : ""}{formatMontant(kpi.marge)}</p>
-                  <p className="text-[9px] text-gray-400 font-bold">{kpi.marge >= 0 ? `+${kpi.tauxMargeActuel.toFixed(1)}%` : `${kpi.tauxMargeActuel.toFixed(1)}%`} rentabilité</p>
-                </div>
+
+                {/* Scénarios de rentabilité de vente */}
+                {kpi.volaillesActuelles > 0 && (
+                  <div className="border-t border-gray-100 pt-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb size={14} className="text-brand-500 animate-pulse" />
+                      <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Scénarios de rentabilité de vente</h4>
+                    </div>
+                    <p className="text-[10px] text-gray-400 font-semibold -mt-2">
+                      Estimations sur la base de <strong>{kpi.volaillesActuelles} sujets vivants</strong> restants · Seuil plancher : <strong>{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F/sujet</strong>
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Plancher */}
+                      <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4 transition-all duration-300 hover:shadow-md">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Prix Plancher (0% gain)</span>
+                        </div>
+                        <p className="text-2xl font-black text-gray-700">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} <span className="text-xs font-semibold">F</span></p>
+                        <p className="text-[10px] text-gray-400 font-semibold mt-1">par sujet</p>
+                        <div className="mt-3 pt-3 border-t border-gray-200/80 text-[11px] text-gray-500">
+                          <p>Revenu total estimé :</p>
+                          <p className="text-sm font-extrabold text-gray-700 mt-0.5">{formatMontant(Math.round(kpi.seuilVenteParSujet) * kpi.volaillesActuelles)}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5 font-bold">Marge nette : 0 F</p>
+                        </div>
+                      </div>
+
+                      {/* Marge 20% — Recommandé */}
+                      <div className="rounded-xl border-2 border-brand-400 bg-brand-50/40 p-4 relative transition-all duration-300 hover:shadow-md">
+                        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-widest shadow-sm">Conseillé</div>
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-brand-500" />
+                          <span className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">Marge Cible +20%</span>
+                        </div>
+                        <p className="text-2xl font-black text-brand-700">{kpi.prixRecommande20.toLocaleString("fr-FR")} <span className="text-xs font-semibold">F</span></p>
+                        <p className="text-[10px] text-brand-500 font-semibold mt-1">par sujet</p>
+                        <div className="mt-3 pt-3 border-t border-brand-200/60 text-[11px] text-gray-600">
+                          <p>Revenu total estimé :</p>
+                          <p className="text-sm font-extrabold text-brand-800 mt-0.5">{formatMontant(kpi.prixRecommande20 * kpi.volaillesActuelles)}</p>
+                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Bénéfice : +{formatMontant(kpi.beneficePotentiel20)}</p>
+                        </div>
+                      </div>
+
+                      {/* Marge 30% — Optimal */}
+                      <div className="rounded-xl border border-emerald-300 bg-emerald-50/20 p-4 transition-all duration-300 hover:shadow-md">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Marge Optimale +30%</span>
+                        </div>
+                        <p className="text-2xl font-black text-emerald-700">{kpi.prixRecommande30.toLocaleString("fr-FR")} <span className="text-xs font-semibold">F</span></p>
+                        <p className="text-[10px] text-emerald-500 font-semibold mt-1">par sujet</p>
+                        <div className="mt-3 pt-3 border-t border-emerald-200 text-[11px] text-gray-600">
+                          <p>Revenu total estimé :</p>
+                          <p className="text-sm font-extrabold text-emerald-800 mt-0.5">{formatMontant(kpi.prixRecommande30 * kpi.volaillesActuelles)}</p>
+                          <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Bénéfice : +{formatMontant(kpi.beneficePotentiel30)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Modes de commercialisation */}
+                    <div className="rounded-xl bg-gray-50/80 border border-gray-150 p-4">
+                      <p className="text-xs font-bold text-gray-700 mb-3 flex items-center gap-1.5">
+                        <ShoppingCart size={13} strokeWidth={2.5} />
+                        Modes de commercialisation préconisés
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-white rounded-xl p-3.5 border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <Package size={12} className="text-brand-500" strokeWidth={2.5} />
+                              <span className="text-xs font-bold text-gray-800">Vente Progressive au Détail</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-semibold leading-tight mt-1">
+                              Idéale pour maximiser les profits en commercialisant directement auprès des particuliers au prix unitaire conseillé.
+                            </p>
+                          </div>
+                          <p className="text-lg font-black text-brand-600 mt-3">{kpi.prixRecommande20.toLocaleString("fr-FR")} F <span className="text-[10px] text-gray-400 font-medium">/ sujet</span></p>
+                        </div>
+                        <div className="bg-white rounded-xl p-3.5 border border-gray-200/80 shadow-sm flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <TrendingUp size={12} className="text-emerald-500" strokeWidth={2.5} />
+                              <span className="text-xs font-bold text-gray-800">Vente en Gros en un Seul Lot</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-semibold leading-tight mt-1">
+                              Remise de 5% intégrée. Vente rapide du lot entier à un grossiste, libérant le bâtiment d'élevage immédiatement sans risque de mévente.
+                            </p>
+                          </div>
+                          <p className="text-lg font-black text-emerald-600 mt-3">{kpi.prixGrosMarge20.toLocaleString("fr-FR")} F <span className="text-[10px] text-gray-400 font-medium">/ sujet</span></p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Bilan des ventes réelles */}
+                    {kpi.revenuGenere > 0 && (
+                      <div className={`rounded-xl p-4 flex items-center justify-between shadow-sm ${kpi.marge >= 0 ? "bg-emerald-50/50 border border-emerald-100" : "bg-orange-50/50 border border-orange-100"}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.marge >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700"}`}>
+                            <Activity size={15} strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-800">Bilan des ventes réelles</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">{kpi.totalVendus} sujets vendus · {formatMontant(kpi.revenuGenere)} encaissés</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-base font-black ${kpi.marge >= 0 ? "text-emerald-700" : "text-orange-700"}`}>{kpi.marge >= 0 ? "+" : ""}{formatMontant(kpi.marge)}</p>
+                          <p className="text-[9px] text-gray-400 font-bold">{kpi.marge >= 0 ? `+${kpi.tauxMargeActuel.toFixed(1)}%` : `${kpi.tauxMargeActuel.toFixed(1)}%`} rentabilité</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
