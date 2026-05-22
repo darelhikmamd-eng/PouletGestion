@@ -1,7 +1,24 @@
 import { pgTable, text, integer, real, timestamp } from "drizzle-orm/pg-core";
 
+// ─── Users (une ligne = une ferme) ─────────────────────────────────────────
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password_hash: text("password_hash").notNull(),
+  nom_ferme: text("nom_ferme").notNull(),
+  localite: text("localite").default(""),
+  ville: text("ville").default(""),
+  pays: text("pays").default(""),
+  contact: text("contact").default(""),
+  activite_principale: text("activite_principale").default(""),
+  objectif_utilisateur: text("objectif_utilisateur").default(""),
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// ─── Bandes ─────────────────────────────────────────────────────────────────
 export const bandes = pgTable("bandes", {
   id: text("id").primaryKey(),
+  farm_id: text("farm_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   nom_lot: text("nom_lot").notNull(),
   date_debut: text("date_debut").notNull(),
   objectif: text("objectif").notNull(),
@@ -14,8 +31,10 @@ export const bandes = pgTable("bandes", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+// ─── Consommations ───────────────────────────────────────────────────────────
 export const consommations = pgTable("consommations", {
   id: text("id").primaryKey(),
+  farm_id: text("farm_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bande_id: text("bande_id").notNull().references(() => bandes.id, { onDelete: "cascade" }),
   date: text("date").notNull(),
   type_aliment: text("type_aliment").notNull(),
@@ -25,8 +44,10 @@ export const consommations = pgTable("consommations", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+// ─── Sante ───────────────────────────────────────────────────────────────────
 export const sante = pgTable("sante", {
   id: text("id").primaryKey(),
+  farm_id: text("farm_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bande_id: text("bande_id").notNull().references(() => bandes.id, { onDelete: "cascade" }),
   date: text("date").notNull(),
   type_op: text("type_op").notNull(),
@@ -36,8 +57,10 @@ export const sante = pgTable("sante", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
+// ─── Sorties ─────────────────────────────────────────────────────────────────
 export const sorties = pgTable("sorties", {
   id: text("id").primaryKey(),
+  farm_id: text("farm_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bande_id: text("bande_id").notNull().references(() => bandes.id, { onDelete: "cascade" }),
   date: text("date").notNull(),
   motif: text("motif").notNull(),

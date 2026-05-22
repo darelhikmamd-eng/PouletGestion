@@ -3,6 +3,8 @@
 import { create } from "zustand";
 
 export interface FarmProfile {
+  id?: string;
+  email?: string;
   nom_ferme: string;
   localite: string;
   ville: string;
@@ -16,12 +18,12 @@ interface AuthState {
   isAuthenticated: boolean;
   farmProfile: FarmProfile | null;
   isLoading: boolean;
-  
-  initialize: () => void;
-  login: (email: string, password: string) => Promise<boolean>;
-  setupFarm: (profile: FarmProfile) => Promise<void>;
+
+  initialize: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  register: (data: FarmProfile & { email: string; password: string }) => Promise<{ ok: boolean; error?: string }>;
   updateProfile: (profile: FarmProfile) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
@@ -29,99 +31,76 @@ export const useAuthStore = create<AuthState>()((set) => ({
   farmProfile: null,
   isLoading: true,
 
-  initialize: () => {
-    if (typeof window === "undefined") return;
+  initialize: async () => {
+    set({ isLoading: true });
     try {
-      const isAuth = localStorage.getItem("poulet_tech_auth") === "true";
-      const profileStr = localStorage.getItem("poulet_tech_profile");
-      const farmProfile = profileStr ? JSON.parse(profileStr) : null;
-      
-      set({
-        isAuthenticated: isAuth,
-        farmProfile: farmProfile,
-        isLoading: false,
-      });
-    } catch (e) {
-      console.error("Failed to initialize auth store", e);
-      set({ isLoading: false });
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const profile: FarmProfile = await res.json();
+        set({ isAuthenticated: true, farmProfile: profile, isLoading: false });
+      } else {
+        set({ isAuthenticated: false, farmProfile: null, isLoading: false });
+      }
+    } catch {
+      set({ isAuthenticated: false, farmProfile: null, isLoading: false });
     }
   },
 
   login: async (email, password) => {
     set({ isLoading: true });
-    // Simple demo validation
-    // Allows logging in with any user, but defaults to elevage@poulet.com / poulet123
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (email.trim() && password.length >= 4) {
-          localStorage.setItem("poulet_tech_auth", "true");
-          // If no profile exists, let's create a default one to avoid crashes
-          let profile = null;
-          const profileStr = localStorage.getItem("poulet_tech_profile");
-          if (profileStr) {
-            profile = JSON.parse(profileStr);
-          } else {
-            profile = {
-              nom_ferme: "Ma Ferme Avicole",
-              localite: "Quartier Central",
-              ville: "Abidjan",
-              pays: "Côte d'Ivoire",
-              contact: "+225 07 00 00 00 00",
-              activite_principale: "Élevage de poulets de chair (Cobb 500)",
-              objectif_utilisateur: "Optimisation de l'Indice de Consommation (FCR) et maximisation des profits de rotation",
-            };
-            localStorage.setItem("poulet_tech_profile", JSON.stringify(profile));
-          }
-          
-          set({
-            isAuthenticated: true,
-            farmProfile: profile,
-            isLoading: false,
-          });
-          resolve(true);
-        } else {
-          set({ isLoading: false });
-          resolve(false);
-        }
-      }, 800);
-    });
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        set({ isAuthenticated: true, farmProfile: data, isLoading: false });
+        return { ok: true };
+      } else {
+        set({ isLoading: false });
+        return { ok: false, error: data.error ?? "Identifiants incorrects." };
+      }
+    } catch {
+      set({ isLoading: false });
+      return { ok: false, error: "Impossible de contacter le serveur." };
+    }
   },
 
-  setupFarm: async (profile) => {
+  register: async (formData) => {
     set({ isLoading: true });
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        localStorage.setItem("poulet_tech_auth", "true");
-        localStorage.setItem("poulet_tech_profile", JSON.stringify(profile));
-        set({
-          isAuthenticated: true,
-          farmProfile: profile,
-          isLoading: false,
-        });
-        resolve();
-      }, 1000);
-    });
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        set({ isAuthenticated: true, farmProfile: data, isLoading: false });
+        return { ok: true };
+      } else {
+        set({ isLoading: false });
+        return { ok: false, error: data.error ?? "Erreur lors de la création du compte." };
+      }
+    } catch {
+      set({ isLoading: false });
+      return { ok: false, error: "Impossible de contacter le serveur." };
+    }
   },
 
   updateProfile: async (profile) => {
-    set({ isLoading: true });
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        localStorage.setItem("poulet_tech_profile", JSON.stringify(profile));
-        set({
-          farmProfile: profile,
-          isLoading: false,
-        });
-        resolve();
-      }, 500);
-    });
+    // Profile update can be added later via /api/auth/profile
+    set({ farmProfile: profile });
   },
 
-  logout: () => {
-    localStorage.removeItem("poulet_tech_auth");
-    set({
-      isAuthenticated: false,
-      farmProfile: null,
-    });
+  logout: async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
+    set({ isAuthenticated: false, farmProfile: null });
   },
 }));

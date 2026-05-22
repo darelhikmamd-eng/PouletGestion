@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { sorties } from "@/lib/schema";
+import { eq } from "drizzle-orm";
+import { generateId } from "@/lib/auth";
 
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+function getFarmId(req: NextRequest): string | null {
+  return req.headers.get("x-farm-id");
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const all = await getDb().select().from(sorties);
+    const farmId = getFarmId(req);
+    if (!farmId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+    const all = await getDb().select().from(sorties).where(eq(sorties.farm_id, farmId));
     return NextResponse.json(all);
   } catch (error) {
     console.error("GET /api/sorties", error);
@@ -18,9 +23,13 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const farmId = getFarmId(req);
+    if (!farmId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
     const data = await req.json();
     const newEntry = {
       id: generateId(),
+      farm_id: farmId,
       bande_id: data.bande_id,
       date: data.date,
       motif: data.motif,
