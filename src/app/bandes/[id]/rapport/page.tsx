@@ -122,60 +122,8 @@ export default function RapportBandePage({ params }: { params: Promise<{ id: str
             </div>
           </section>
 
-          <section className="mb-8 bg-gradient-to-br from-brand-50/15 to-white border border-brand-100/60 rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-1.5">
-              <Activity size={14} className="text-brand-500" />
-              3. Performances zootechniques (Cobb 500)
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white border border-gray-150 rounded-xl p-4 shadow-xs">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Indice de Consommation Réel (FCR)</p>
-                <p className="text-3xl font-black text-gray-900 flex items-baseline gap-1">
-                  {kpi.fcr ? kpi.fcr.toFixed(2) : "—"}
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">(Standard : ~1.70)</span>
-                </p>
-                <p className="text-[11px] text-gray-500 mt-2 font-medium leading-relaxed">
-                  {kpi.fcr && kpi.fcr > 1.85 ? (
-                    <span className="text-red-600 font-bold">⚠️ FCR dégradé : Le lot consomme trop d'aliment par rapport à son gain de poids réel. Vérifiez la mortalité et les gaspillages.</span>
-                  ) : kpi.fcr && kpi.fcr > 1.75 ? (
-                    <span className="text-amber-600 font-bold">💡 FCR moyen : Niveau d'efficacité correct mais perfectible. Améliorez le confort thermique.</span>
-                  ) : (
-                    <span className="text-emerald-600 font-bold">✨ FCR optimal : Efficacité alimentaire exceptionnelle. Valorisation maximale des intrants.</span>
-                  )}
-                </p>
-              </div>
-
-              <div className="bg-white border border-gray-150 rounded-xl p-4 shadow-xs">
-                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Poids Moyen Estimé par Sujet</p>
-                <p className="text-3xl font-black text-gray-900">
-                  {kpi.poidsMoyenEstime ? kpi.poidsMoyenEstime.toFixed(2) : "—"} <span className="text-sm font-semibold">kg</span>
-                </p>
-                <p className="text-[11px] text-gray-500 mt-2 font-medium">
-                  Biomasse totale sur pied estimée : <span className="font-extrabold text-gray-800">{Math.round((kpi.poidsMoyenEstime || 0) * kpi.volaillesActuelles).toLocaleString("fr-FR")} kg</span> pour le cheptel vivant actuel.
-                </p>
-              </div>
-            </div>
-
-            {/* Prolongation cycle alert & commercial strategies */}
-            <div className="mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50/40">
-              <div className="flex gap-2">
-                <AlertTriangle className="text-amber-500 flex-shrink-0 mt-0.5" size={16} />
-                <div>
-                  <h4 className="text-xs font-black text-amber-950 uppercase tracking-wider">Aide à la Décision : Rentabilité & Écoulement</h4>
-                  <p className="text-xs text-amber-900 mt-1 leading-relaxed font-semibold">
-                    {kpi.ageBande >= 45 ? (
-                      `⚠️ ALERTE DE PROLONGATION DE CYCLE : Le lot a dépassé le cycle nominal optimal de 45 jours (Âge actuel : J+${kpi.ageBande}). À partir de J+45, la prise de muscle ralentit fortement alors que le besoin énergétique de maintenance atteint son pic (220g+ d'aliment quotidien). Conserver les sujets dégrade considérablement l'Indice de Consommation (FCR) et réduit votre marge nette chaque jour. Procédez à l'écoulement immédiat.`
-                    ) : (
-                      `Âge actuel du lot : J+${kpi.ageBande} jours. L'indice FCR et la rentabilité sont optimisés pour une sortie à J+45. Planifiez dès maintenant les circuits de vente en gros ou au détail pour écouler la production à l'échéance nominale.`
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
           <section className="mb-8">
-            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">4. Indicateurs financiers</h3>
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">3. Indicateurs financiers</h3>
             <div className="border border-gray-200 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
@@ -234,7 +182,7 @@ export default function RapportBandePage({ params }: { params: Promise<{ id: str
 
           {(consommations.length > 0 || santeOps.length > 0) && (
             <section className="mb-8">
-              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">5. Détail des opérations</h3>
+              <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">4. Détail des opérations</h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {consommations.length > 0 && (
                   <div>
