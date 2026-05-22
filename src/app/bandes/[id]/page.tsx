@@ -4,10 +4,9 @@ import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, Bird, Calendar, Users, Phone, Banknote,
-  Tag, CheckCircle2, XCircle, Wheat, HeartPulse, TrendingDown,
-  Target, Activity, AlertTriangle, Clock, TrendingUp, ShoppingCart,
-  Package, Lightbulb, Scale, Trash2, ShieldCheck, Thermometer, Droplets, Sun, Sparkles,
+  ArrowLeft, Bird, CheckCircle2, XCircle, Wheat, HeartPulse, TrendingDown,
+  Activity, AlertTriangle, Clock, TrendingUp, ShoppingCart,
+  Package, Lightbulb, Trash2, ShieldCheck, Thermometer, Droplets, Sun,
   Camera, Upload, Plus
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -21,31 +20,13 @@ import {
   getFeedRecommendation,
   DIAGNOSTIC_IA_DISEASES
 } from "@/lib/kpi";
-import { SVGDoughnutChart } from "@/components/ui/SVGDoughnutChart";
+
 import { SVGLineChart } from "@/components/ui/SVGLineChart";
 import { AlimentForm } from "@/components/alimentation/AlimentForm";
 import { SanteForm } from "@/components/sante/SanteForm";
 import { SortieForm } from "@/components/sorties/SortieForm";
 
-interface InfoRowProps {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-}
 
-function InfoRow({ icon: Icon, label, value }: InfoRowProps) {
-  return (
-    <div className="flex items-center gap-3 py-3 border-b border-gray-150/40 last:border-0 hover:bg-gray-50/40 px-2 rounded-xl transition-colors">
-      <div className="w-9 h-9 rounded-xl bg-gray-100/80 flex items-center justify-center flex-shrink-0 shadow-sm">
-        <Icon size={15} className="text-gray-500" strokeWidth={2.5} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{label}</p>
-        <p className="text-sm font-black text-gray-800 truncate mt-0.5">{value}</p>
-      </div>
-    </div>
-  );
-}
 
 export default function BandeDetailPage({
   params,
@@ -226,12 +207,7 @@ export default function BandeDetailPage({
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Doughnut chart breakdown data
-  const expenseChartData = [
-    { label: "Achat Poussins", value: bande.prix_achat_global, color: "text-gray-400", strokeColor: "#9ca3af" },
-    { label: "Alimentation", value: kpi.totalAliment, color: "text-blue-500", strokeColor: "#3b82f6" },
-    { label: "Santé & Hygiène", value: kpi.totalSante, color: "text-purple-500", strokeColor: "#a855f7" },
-  ];
+
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -907,92 +883,61 @@ export default function BandeDetailPage({
         )}
 
         {/* Dynamic Prophylaxis Calendar Co-pilot Widget */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Prophylaxis co-pilot timeline (2/3 width) */}
-          <div className="card p-5 md:col-span-2">
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <ShieldCheck size={16} className="text-emerald-500" />
-              Co-pilote Vétérinaire — Calendrier de Prophylaxie
-            </h2>
-            <p className="text-xs text-gray-400 font-semibold mb-5">
-              Plan vaccinal et de santé standard (Cobb 500 / Ross 308)
-            </p>
+        <div className="card p-5">
+          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <ShieldCheck size={16} className="text-emerald-500" />
+            Co-pilote Vétérinaire — Calendrier de Prophylaxie
+          </h2>
+          <p className="text-xs text-gray-400 font-semibold mb-5">
+            Plan vaccinal et de santé standard (Cobb 500 / Ross 308)
+          </p>
 
-            <div className="relative pl-4 border-l-2 border-gray-100 space-y-4">
-              {computedMilestones.map((milestone) => {
-                const isDone = milestone.status === "done";
-                const isTodo = milestone.status === "todo";
-                const isUpcoming = milestone.status === "upcoming";
+          <div className="relative pl-4 border-l-2 border-gray-100 space-y-4">
+            {computedMilestones.map((milestone) => {
+              const isDone = milestone.status === "done";
+              const isTodo = milestone.status === "todo";
+              const isUpcoming = milestone.status === "upcoming";
 
-                return (
-                  <div key={milestone.jour} className="relative group pl-3">
-                    {/* Circle timeline indicator */}
-                    <span className={`absolute -left-[23px] top-1 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm
-                      ${isDone ? "border-emerald-500 bg-emerald-50" : ""}
-                      ${isTodo ? "border-amber-500 bg-amber-50 animate-pulse" : ""}
-                      ${isUpcoming ? "border-gray-200 bg-gray-50" : ""}
-                    `}>
-                      {isDone && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                      {isTodo && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />}
-                    </span>
+              return (
+                <div key={milestone.jour} className="relative group pl-3">
+                  {/* Circle timeline indicator */}
+                  <span className={`absolute -left-[23px] top-1 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm
+                    ${isDone ? "border-emerald-500 bg-emerald-50" : ""}
+                    ${isTodo ? "border-amber-500 bg-amber-50 animate-pulse" : ""}
+                    ${isUpcoming ? "border-gray-200 bg-gray-50" : ""}
+                  `}>
+                    {isDone && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                    {isTodo && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />}
+                  </span>
 
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-xs font-black text-gray-800">{milestone.label}</p>
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{milestone.type}</span>
-                        </div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">Échéance : J+{milestone.jour} ({milestone.formattedDate})</p>
-                        <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-tight">{milestone.note}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs font-black text-gray-800">{milestone.label}</p>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{milestone.type}</span>
                       </div>
-                      <div className="self-start sm:self-auto">
-                        {isDone ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shadow-sm">
-                            <CheckCircle2 size={9} /> Complété
-                          </span>
-                        ) : isTodo ? (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-sm">
-                            ⚠️ À faire
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
-                            À venir
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">Échéance : J+{milestone.jour} ({milestone.formattedDate})</p>
+                      <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-tight">{milestone.note}</p>
+                    </div>
+                    <div className="self-start sm:self-auto">
+                      {isDone ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shadow-sm">
+                          <CheckCircle2 size={9} /> Complété
+                        </span>
+                      ) : isTodo ? (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-sm">
+                          ⚠️ À faire
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                          À venir
+                        </span>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Interactive Expenses doughnut breakdown (1/3 width) */}
-          <div className="card p-5 flex flex-col justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Scale size={15} className="text-gray-500" />
-                Décomposition des coûts
-              </h2>
-              <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-150 px-2 py-0.5 rounded-full inline-block mt-1">Total : {formatMontant(kpi.totalDepenses)}</span>
-            </div>
-
-            <div className="mt-4 flex-1 flex items-center justify-center">
-              <SVGDoughnutChart data={expenseChartData} />
-            </div>
-
-            {kpi.totalQuantiteKg > 0 && (
-              <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col gap-1 text-[11px] text-gray-500 font-semibold">
-                <div className="flex justify-between">
-                  <span>Aliment consommé :</span>
-                  <span className="text-gray-800 font-black">{kpi.totalQuantiteKg.toLocaleString("fr-FR")} kg</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Coût moyen / sujet :</span>
-                  <span className="text-gray-800 font-black">{Math.round(kpi.seuilVenteParSujet).toLocaleString("fr-FR")} F</span>
-                </div>
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
 
@@ -1122,36 +1067,6 @@ export default function BandeDetailPage({
           </div>
         )}
 
-        {/* Technical & Commercial Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* General characteristics */}
-          <div className="card p-5">
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <Bird size={15} className="text-brand-500 animate-pulse" />
-              Caractéristiques Générales
-            </h2>
-            <div className="space-y-1">
-              <InfoRow icon={Calendar} label="Date de mise en place" value={formatDateLong(bande.date_debut)} />
-              <InfoRow icon={Clock} label="Âge du lot actuel" value={`J+${kpi.ageBande} jours`} />
-              <InfoRow icon={Tag} label="Objectif commercial" value={bande.objectif} />
-              <InfoRow icon={Users} label="Taille du lot initiale" value={`${bande.nbr_poussins.toLocaleString("fr-FR")} poussins`} />
-              <InfoRow icon={Banknote} label="Coût d'acquisition global" value={formatMontant(bande.prix_achat_global)} />
-            </div>
-          </div>
-
-          {/* Supplier characteristics */}
-          <div className="card p-5">
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <Phone size={15} className="text-brand-500 animate-pulse" />
-              Données Fournisseur & Souche
-            </h2>
-            <div className="space-y-1">
-              <InfoRow icon={CheckCircle2} label="Raison Sociale Fournisseur" value={bande.fournisseur} />
-              <InfoRow icon={Phone} label="Contact Téléphonique" value={bande.contact_fournisseur || "Non renseigné"} />
-              <InfoRow icon={Bird} label="Souche / Race du Poussin" value={bande.race} />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Modals structures */}
