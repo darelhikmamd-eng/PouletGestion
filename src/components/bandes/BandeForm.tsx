@@ -131,15 +131,13 @@ export function BandeForm() {
             <option value="reproduction">Reproduction</option>
             <option value="ponte">Ponte</option>
           </Select>
-          <Select
-            label="Statut initial"
-            name="statut"
-            value={form.statut}
-            onChange={handleChange}
-          >
-            <option value="actif">Actif</option>
-            <option value="cloture">Clôturé</option>
-          </Select>
+          <Input
+            label="Durée maximale du cycle"
+            name="cycle_max"
+            value="45 jours"
+            disabled
+            hint="Cette durée de cycle de 45 jours est configurée automatiquement."
+          />
         </div>
       </section>
 

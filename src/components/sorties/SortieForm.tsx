@@ -85,6 +85,7 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel }: SortieFormProp
           value={form.bande_id}
           onChange={handleChange}
           error={errors.bande_id}
+          disabled={!!bandeId}
         >
           <option value="">— Sélectionner —</option>
           {bandesSorted.map((b) => (

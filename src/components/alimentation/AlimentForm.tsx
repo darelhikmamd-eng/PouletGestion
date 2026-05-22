@@ -85,6 +85,7 @@ export function AlimentForm({ bandeId = "", onSuccess, onCancel }: AlimentFormPr
           value={form.bande_id}
           onChange={handleChange}
           error={errors.bande_id}
+          disabled={!!bandeId}
         >
           <option value="">— Sélectionner —</option>
           {bandesSorted.map((b) => (

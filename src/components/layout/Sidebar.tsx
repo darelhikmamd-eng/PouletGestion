@@ -5,24 +5,21 @@ import { usePathname } from "next/navigation";
 import {
   LayoutGrid,
   Bird,
-  Wheat,
-  HeartPulse,
-  TrendingDown,
-  FolderOpen,
+  Settings,
+  LogOut,
   ChevronRight,
 } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const navItems = [
   { href: "/", label: "Tableau de bord", icon: LayoutGrid },
   { href: "/bandes", label: "Gestion des Bandes", icon: Bird },
-  { href: "/alimentation", label: "Alimentation", icon: Wheat },
-  { href: "/sante", label: "Santé & Hygiène", icon: HeartPulse },
-  { href: "/sorties", label: "Sorties", icon: TrendingDown },
-  { href: "/documents", label: "Documents", icon: FolderOpen },
+  { href: "/parametres", label: "Paramètres", icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { logout, farmProfile } = useAuthStore();
 
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-slate-900 border-r border-slate-800 z-40 text-slate-300">
@@ -30,11 +27,13 @@ export function Sidebar() {
         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center shadow-lg shadow-brand-500/20 animate-pulse">
           <Bird size={22} className="text-slate-950 font-black" strokeWidth={2.5} />
         </div>
-        <div>
-          <h1 className="text-md font-black tracking-tight text-white flex items-center gap-1">
-            Poulet-Tech <span className="text-[9px] bg-brand-500 text-slate-950 px-1.5 py-0.5 rounded-full font-bold uppercase">PRO</span>
+        <div className="min-w-0">
+          <h1 className="text-sm font-black tracking-tight text-white truncate flex items-center gap-1">
+            {farmProfile?.nom_ferme || "Poulet-Tech"}
           </h1>
-          <p className="text-[10px] text-slate-400 font-medium">Pilotage avicole intelligent</p>
+          <p className="text-[10px] text-slate-400 font-semibold truncate">
+            {farmProfile?.localite ? `${farmProfile.localite}, ${farmProfile.ville}` : "Gestionnaire avicole"}
+          </p>
         </div>
       </div>
 
@@ -65,6 +64,23 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Déconnexion action button */}
+        <button
+          onClick={() => {
+            if (confirm("Êtes-vous sûr de vouloir vous déconnecter ?")) {
+              logout();
+            }
+          }}
+          className="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group hover:translate-x-1.5 text-slate-400 hover:bg-red-950/30 hover:text-red-400 cursor-pointer text-left"
+        >
+          <LogOut
+            size={18}
+            strokeWidth={1.8}
+            className="text-slate-400 group-hover:text-red-400 transition-colors"
+          />
+          <span className="flex-1">Déconnexion</span>
+        </button>
       </nav>
 
       <div className="px-5 py-4 border-t border-slate-800/80 bg-slate-950/20">

@@ -23,6 +23,9 @@ import {
 } from "@/lib/kpi";
 import { SVGDoughnutChart } from "@/components/ui/SVGDoughnutChart";
 import { SVGLineChart } from "@/components/ui/SVGLineChart";
+import { AlimentForm } from "@/components/alimentation/AlimentForm";
+import { SanteForm } from "@/components/sante/SanteForm";
+import { SortieForm } from "@/components/sorties/SortieForm";
 
 interface InfoRowProps {
   icon: React.ElementType;
@@ -67,6 +70,9 @@ export default function BandeDetailPage({
 
   // Advanced co-pilots state management
   const [activeTab, setActiveTab] = useState<"meteo" | "alimentation" | "ia">("ia");
+  const [showAlimentModal, setShowAlimentModal] = useState(false);
+  const [showSanteModal, setShowSanteModal] = useState(false);
+  const [showSortieModal, setShowSortieModal] = useState(false);
   
   // 1. Weather Co-pilot
   const [selectedTown, setSelectedTown] = useState("Abidjan (CI)");
@@ -1062,7 +1068,7 @@ export default function BandeDetailPage({
                 <Wheat size={14} className="text-blue-500" />
                 Alimentation
               </h2>
-              <Link href="/alimentation" className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline">+ Saisir</Link>
+              <button onClick={() => setShowAlimentModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
             </div>
             {consommations.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-6">Aucun repas ou sac enregistré</p>
@@ -1093,7 +1099,7 @@ export default function BandeDetailPage({
                 <HeartPulse size={14} className="text-purple-500" />
                 Soins & Santé
               </h2>
-              <Link href="/sante" className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline">+ Saisir</Link>
+              <button onClick={() => setShowSanteModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
             </div>
             {santeOps.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-6">Aucun traitement ou vaccin</p>
@@ -1124,7 +1130,7 @@ export default function BandeDetailPage({
                 <TrendingDown size={14} className="text-red-500" />
                 Ventes & Décès
               </h2>
-              <Link href="/sorties" className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline">+ Saisir</Link>
+              <button onClick={() => setShowSortieModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
             </div>
             {sorties.length === 0 ? (
               <p className="text-xs text-gray-400 text-center py-6">Aucune vente ou perte déclarée</p>
@@ -1154,6 +1160,85 @@ export default function BandeDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Modals structures */}
+      {showAlimentModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-300">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                <Wheat size={16} className="text-blue-500" />
+                Saisir une Alimentation
+              </h3>
+              <button
+                onClick={() => setShowAlimentModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="p-6">
+              <AlimentForm
+                bandeId={bande.id}
+                onSuccess={() => setShowAlimentModal(false)}
+                onCancel={() => setShowAlimentModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSanteModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-300">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                <HeartPulse size={16} className="text-purple-500" />
+                Saisir un Soin / Santé
+              </h3>
+              <button
+                onClick={() => setShowSanteModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="p-6">
+              <SanteForm
+                bandeId={bande.id}
+                onSuccess={() => setShowSanteModal(false)}
+                onCancel={() => setShowSanteModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSortieModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-gray-200 overflow-hidden transform transition-all duration-300">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                <TrendingDown size={16} className="text-red-500" />
+                Saisir une Vente / Décès
+              </h3>
+              <button
+                onClick={() => setShowSortieModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <XCircle size={18} />
+              </button>
+            </div>
+            <div className="p-6">
+              <SortieForm
+                bandeId={bande.id}
+                onSuccess={() => setShowSortieModal(false)}
+                onCancel={() => setShowSortieModal(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
