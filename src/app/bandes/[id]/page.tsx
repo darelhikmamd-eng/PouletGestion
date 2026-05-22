@@ -396,7 +396,7 @@ export default function BandeDetailPage({
               {[
                 { id: "meteo", label: "Météo Live & Climat", icon: Sun, color: "text-amber-600 bg-amber-50" },
                 { id: "alimentation", label: "Rationnement Cobb 500", icon: Wheat, color: "text-blue-600 bg-blue-50" },
-                { id: "ia", label: "Diagnostic Vision IA", icon: Camera, color: "text-brand-600 bg-brand-50" }
+                { id: "ia", label: "Santé", icon: HeartPulse, color: "text-brand-600 bg-brand-50" }
               ].map((tab) => {
                 const isSelected = activeTab === tab.id;
                 const Icon = tab.icon;
@@ -666,280 +666,287 @@ export default function BandeDetailPage({
               </div>
             )}
 
-            {/* Contenu de l'onglet 3 : Diagnostic Vision IA */}
+            {/* Contenu de l'onglet 3 : Santé */}
             {activeTab === "ia" && (
               <div className="p-5 space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-150/80">
-                  <div>
-                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <Camera size={15} className="text-brand-500 animate-pulse" />
-                      Scanner Intelligent de Pathologies (Vision IA)
-                    </h3>
-                    <p className="text-xs text-gray-400 font-semibold mt-0.5">
-                      Simulation de Computer Vision entraînée sur Cobb 500 pour une détection terrain instantanée
-                    </p>
-                  </div>
-                  <Badge variant="warning" className="bg-brand-500 text-white animate-pulse border-none">BETA EXPERT</Badge>
-                </div>
 
-                {/* Image upload selector area */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-                  {/* Selectors / Upload simulators (4 cols) */}
-                  <div className="md:col-span-4 flex flex-col gap-3">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sélectionnez une photo échantillon :</p>
-                    
-                    {[
-                      { id: "sain", name: "Fientes Normales", desc: "Sujets en bonne santé", color: "border-emerald-200 hover:border-emerald-500 bg-emerald-50/10 text-emerald-950" },
-                      { id: "coccidiose", name: "Fientes Rosâtres à Rouges", desc: "Indices hémorragiques de Coccidiose", color: "border-red-200 hover:border-red-500 bg-red-50/10 text-red-950" },
-                      { id: "newcastle", name: "Diarrhée Aqueuse Verdâtre", desc: "Symptôme viral de Newcastle", color: "border-purple-200 hover:border-purple-500 bg-purple-50/10 text-purple-950" },
-                      { id: "colibacillose", name: "Fientes Blanchâtres pâteuses", desc: "Signes d'infection à E. coli", color: "border-amber-200 hover:border-amber-500 bg-amber-50/10 text-amber-950" }
-                    ].map((sample) => (
-                      <button
-                        key={sample.id}
-                        onClick={() => handleSampleClick(sample.id)}
-                        disabled={isScanning}
-                        className={`card p-3 text-left border rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 group flex flex-col justify-between cursor-pointer ${
-                          selectedSample === sample.id ? "ring-2 ring-brand-500 " + sample.color : "border-gray-150"
-                        } ${isScanning ? "opacity-50 pointer-events-none" : ""}`}
-                      >
-                        <div>
-                          <p className="text-xs font-black tracking-tight">{sample.name}</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5 leading-tight font-semibold">{sample.desc}</p>
-                        </div>
-                      </button>
-                    ))}
-
-                    <div className="border border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center bg-gray-50/30 opacity-60">
-                      <Upload size={18} className="text-gray-400" />
-                      <p className="text-[10px] text-gray-500 font-bold mt-1.5">Importer une photo personnalisée</p>
-                      <p className="text-[8px] text-gray-400 mt-0.5">Formats acceptés : PNG, JPG</p>
+                {/* Calendrier de Prophylaxie intégré */}
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                    <div>
+                      <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck size={15} className="text-emerald-500" />
+                        Co-pilote Vétérinaire — Calendrier de Prophylaxie
+                      </h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                        Plan vaccinal et de santé standard (Cobb 500 / Ross 308)
+                      </p>
                     </div>
                   </div>
 
-                  {/* Scanning visualization and report area (8 cols) */}
-                  <div className="md:col-span-8 bg-gray-50/50 rounded-xl border border-gray-150 p-4 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
-                    {/* Scanner animation */}
-                    {isScanning && (
-                      <div className="absolute inset-0 bg-brand-500/10 flex flex-col items-center justify-center z-10">
-                        <div className="animate-scanner" />
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg animate-pulse text-brand-600 mb-3">
-                          <Camera size={24} />
-                        </div>
-                        <p className="text-xs font-black text-brand-700 uppercase tracking-widest animate-bounce">
-                          Analyse par convolution IA...
-                        </p>
-                        <p className="text-[9px] text-gray-400 font-semibold mt-1">Comparaison des biomarqueurs avec la base Cobb 500</p>
-                      </div>
-                    )}
+                  <div className="relative pl-4 border-l-2 border-gray-100 space-y-4 mt-4">
+                    {computedMilestones.map((milestone) => {
+                      const isDone = milestone.status === "done";
+                      const isTodo = milestone.status === "todo";
+                      const isUpcoming = milestone.status === "upcoming";
 
-                    {/* Default state */}
-                    {!selectedSample && !isScanning && (
-                      <div className="text-center py-12 flex flex-col items-center justify-center">
-                        <div className="w-14 h-14 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center shadow-inner mb-4">
-                          <Camera size={28} />
-                        </div>
-                        <p className="text-sm font-black text-gray-800 tracking-tight">Aucun échantillon en cours d'analyse</p>
-                        <p className="text-xs text-gray-400 mt-1 font-semibold max-w-sm">
-                          Sélectionnez l'un des échantillons photographiques sur la gauche pour lancer la simulation d'analyse d'imagerie diagnostique.
-                        </p>
-                      </div>
-                    )}
+                      return (
+                        <div key={milestone.jour} className="relative group pl-3">
+                          <span className={`absolute -left-[23px] top-1 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm
+                            ${isDone ? "border-emerald-500 bg-emerald-50" : ""}
+                            ${isTodo ? "border-amber-500 bg-amber-50 animate-pulse" : ""}
+                            ${isUpcoming ? "border-gray-200 bg-gray-50" : ""}
+                          `}>
+                            {isDone && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                            {isTodo && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />}
+                          </span>
 
-                    {/* Scan complete results */}
-                    {scanComplete && diagnosedDisease && !isScanning && (
-                      <div className="space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-gray-100">
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-xs font-black text-gray-800">{milestone.label}</p>
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{milestone.type}</span>
+                              </div>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">Échéance : J+{milestone.jour} ({milestone.formattedDate})</p>
+                              <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-tight">{milestone.note}</p>
+                            </div>
+                            <div className="self-start sm:self-auto">
+                              {isDone ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shadow-sm">
+                                  <CheckCircle2 size={9} /> Complété
+                                </span>
+                              ) : isTodo ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-sm">
+                                  ⚠️ À faire
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                                  À venir
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Séparateur / Scanner IA */}
+                <div className="border-t border-gray-100 pt-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-150/80">
+                    <div>
+                      <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Camera size={15} className="text-brand-500 animate-pulse" />
+                        Scanner Intelligent de Pathologies (Vision IA)
+                      </h3>
+                      <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                        Simulation de Computer Vision entraînée sur Cobb 500 pour une détection terrain instantanée
+                      </p>
+                    </div>
+                    <Badge variant="warning" className="bg-brand-500 text-white animate-pulse border-none">BETA EXPERT</Badge>
+                  </div>
+
+                  {/* Image upload selector area */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    {/* Selectors / Upload simulators (4 cols) */}
+                    <div className="md:col-span-4 flex flex-col gap-3">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sélectionnez une photo échantillon :</p>
+                      
+                      {[
+                        { id: "sain", name: "Fientes Normales", desc: "Sujets en bonne santé", color: "border-emerald-200 hover:border-emerald-500 bg-emerald-50/10 text-emerald-950" },
+                        { id: "coccidiose", name: "Fientes Rosâtres à Rouges", desc: "Indices hémorragiques de Coccidiose", color: "border-red-200 hover:border-red-500 bg-red-50/10 text-red-950" },
+                        { id: "newcastle", name: "Diarrhée Aqueuse Verdâtre", desc: "Symptôme viral de Newcastle", color: "border-purple-200 hover:border-purple-500 bg-purple-50/10 text-purple-950" },
+                        { id: "colibacillose", name: "Fientes Blanchâtres pâteuses", desc: "Signes d'infection à E. coli", color: "border-amber-200 hover:border-amber-500 bg-amber-50/10 text-amber-950" }
+                      ].map((sample) => (
+                        <button
+                          key={sample.id}
+                          onClick={() => handleSampleClick(sample.id)}
+                          disabled={isScanning}
+                          className={`card p-3 text-left border rounded-xl hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 group flex flex-col justify-between cursor-pointer ${
+                            selectedSample === sample.id ? "ring-2 ring-brand-500 " + sample.color : "border-gray-150"
+                          } ${isScanning ? "opacity-50 pointer-events-none" : ""}`}
+                        >
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-black uppercase text-gray-400">Pathologie Détectée</span>
-                              <Badge variant={diagnosedDisease.id === "sain" ? "success" : "error"}>
-                                {diagnosedDisease.id === "sain" ? "Sain" : "Alerte Sanitaire"}
-                              </Badge>
+                            <p className="text-xs font-black tracking-tight">{sample.name}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5 leading-tight font-semibold">{sample.desc}</p>
+                          </div>
+                        </button>
+                      ))}
+
+                      <div className="border border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center bg-gray-50/30 opacity-60">
+                        <Upload size={18} className="text-gray-400" />
+                        <p className="text-[10px] text-gray-500 font-bold mt-1.5">Importer une photo personnalisée</p>
+                        <p className="text-[8px] text-gray-400 mt-0.5">Formats acceptés : PNG, JPG</p>
+                      </div>
+                    </div>
+
+                    {/* Scanning visualization and report area (8 cols) */}
+                    <div className="md:col-span-8 bg-gray-50/50 rounded-xl border border-gray-150 p-4 relative overflow-hidden flex flex-col justify-center min-h-[300px]">
+                      {/* Scanner animation */}
+                      {isScanning && (
+                        <div className="absolute inset-0 bg-brand-500/10 flex flex-col items-center justify-center z-10">
+                          <div className="animate-scanner" />
+                          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg animate-pulse text-brand-600 mb-3">
+                            <Camera size={24} />
+                          </div>
+                          <p className="text-xs font-black text-brand-700 uppercase tracking-widest animate-bounce">
+                            Analyse par convolution IA...
+                          </p>
+                          <p className="text-[9px] text-gray-400 font-semibold mt-1">Comparaison des biomarqueurs avec la base Cobb 500</p>
+                        </div>
+                      )}
+
+                      {/* Default state */}
+                      {!selectedSample && !isScanning && (
+                        <div className="text-center py-12 flex flex-col items-center justify-center">
+                          <div className="w-14 h-14 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center shadow-inner mb-4">
+                            <Camera size={28} />
+                          </div>
+                          <p className="text-sm font-black text-gray-800 tracking-tight">Aucun échantillon en cours d'analyse</p>
+                          <p className="text-xs text-gray-400 mt-1 font-semibold max-w-sm">
+                            Sélectionnez l'un des échantillons photographiques sur la gauche pour lancer la simulation d'analyse d'imagerie diagnostique.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Scan complete results */}
+                      {scanComplete && diagnosedDisease && !isScanning && (
+                        <div className="space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-gray-100">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black uppercase text-gray-400">Pathologie Détectée</span>
+                                <Badge variant={diagnosedDisease.id === "sain" ? "success" : "error"}>
+                                  {diagnosedDisease.id === "sain" ? "Sain" : "Alerte Sanitaire"}
+                                </Badge>
+                              </div>
+                              <h4 className="text-base font-black text-gray-900 tracking-tight mt-1 flex items-center gap-1.5">
+                                {diagnosedDisease.nom}
+                              </h4>
                             </div>
-                            <h4 className="text-base font-black text-gray-900 tracking-tight mt-1 flex items-center gap-1.5">
-                              {diagnosedDisease.nom}
-                            </h4>
-                          </div>
 
-                          <div className="text-right">
-                            <span className="text-xs font-black text-gray-400 block uppercase">Indice de Confiance</span>
-                            <span className={`text-xl font-black ${diagnosedDisease.id === "sain" ? "text-emerald-600" : "text-red-600"}`}>
-                              {diagnosedDisease.id === "sain" ? "99.8%" : "94.2%"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description Clinique</p>
-                          <p className="text-xs text-gray-600 font-semibold mt-1 leading-relaxed bg-white p-3 rounded-lg border border-gray-200/60 shadow-sm">{diagnosedDisease.description}</p>
-                        </div>
-
-                        {/* Symptoms & Urgency grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {/* Symptoms */}
-                          <div className="bg-white/80 border border-gray-200/80 p-3.5 rounded-xl shadow-sm">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">Symptômes Observés</p>
-                            <ul className="space-y-1.5">
-                              {diagnosedDisease.symptomes.map((symptom: string) => (
-                                <li key={symptom} className="text-xs text-gray-600 font-semibold flex items-start gap-1.5">
-                                  <span className="text-brand-500 mt-0.5">•</span>
-                                  {symptom}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-
-                          {/* Urgency measures */}
-                          <div className="bg-white/80 border border-gray-200/80 p-3.5 rounded-xl shadow-sm">
-                            <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">Mesures d'Urgence Immédiates</p>
-                            <ul className="space-y-1.5">
-                              {diagnosedDisease.mesuresUrgence.map((measure: string) => (
-                                <li key={measure} className="text-xs text-red-700 font-semibold flex items-start gap-1.5">
-                                  <span className="text-red-500 mt-0.5">!</span>
-                                  {measure}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-
-                        {/* Treatment recommend and convalescence log */}
-                        <div className="rounded-xl border border-brand-200 bg-brand-50/20 p-4">
-                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">Traitement Technico-Médical Suggéré</p>
-                              <p className="text-xs text-gray-700 font-black mt-1 leading-relaxed">{diagnosedDisease.traitementPropose}</p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase mt-1.5">
-                                Durée d'isolement recommandée : {diagnosedDisease.dureeConvalescenceJours} jours
-                              </p>
+                            <div className="text-right">
+                              <span className="text-xs font-black text-gray-400 block uppercase">Indice de Confiance</span>
+                              <span className={`text-xl font-black ${diagnosedDisease.id === "sain" ? "text-emerald-600" : "text-red-600"}`}>
+                                {diagnosedDisease.id === "sain" ? "99.8%" : "94.2%"}
+                              </span>
                             </div>
-                            
-                            {diagnosedDisease.dureeConvalescenceJours > 0 && (
-                              <div className="self-start sm:self-auto flex-shrink-0">
-                                {treatmentLogged ? (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm">
-                                    <CheckCircle2 size={12} /> Loggué au Registre
-                                  </span>
-                                ) : (
-                                  <button
-                                    onClick={handleLogTreatment}
-                                    className="px-3.5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-black transition-all duration-200 shadow-md shadow-brand-500/25 flex items-center gap-1.5 cursor-pointer"
-                                  >
-                                    <Plus size={14} /> Loguer le traitement
-                                  </button>
-                                )}
+                          </div>
+
+                          {/* Description */}
+                          <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Description Clinique</p>
+                            <p className="text-xs text-gray-600 font-semibold mt-1 leading-relaxed bg-white p-3 rounded-lg border border-gray-200/60 shadow-sm">{diagnosedDisease.description}</p>
+                          </div>
+
+                          {/* Symptoms & Urgency grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Symptoms */}
+                            <div className="bg-white/80 border border-gray-200/80 p-3.5 rounded-xl shadow-sm">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">Symptômes Observés</p>
+                              <ul className="space-y-1.5">
+                                {diagnosedDisease.symptomes.map((symptom: string) => (
+                                  <li key={symptom} className="text-xs text-gray-600 font-semibold flex items-start gap-1.5">
+                                    <span className="text-brand-500 mt-0.5">•</span>
+                                    {symptom}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Urgency measures */}
+                            <div className="bg-white/80 border border-gray-200/80 p-3.5 rounded-xl shadow-sm">
+                              <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2 border-b border-gray-50 pb-1">Mesures d'Urgence Immédiates</p>
+                              <ul className="space-y-1.5">
+                                {diagnosedDisease.mesuresUrgence.map((measure: string) => (
+                                  <li key={measure} className="text-xs text-red-700 font-semibold flex items-start gap-1.5">
+                                    <span className="text-red-500 mt-0.5">!</span>
+                                    {measure}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+
+                          {/* Treatment recommend and convalescence log */}
+                          <div className="rounded-xl border border-brand-200 bg-brand-50/20 p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <p className="text-[10px] font-bold text-brand-700 uppercase tracking-wider">Traitement Technico-Médical Suggéré</p>
+                                <p className="text-xs text-gray-700 font-black mt-1 leading-relaxed">{diagnosedDisease.traitementPropose}</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase mt-1.5">
+                                  Durée d'isolement recommandée : {diagnosedDisease.dureeConvalescenceJours} jours
+                                </p>
+                              </div>
+                              
+                              {diagnosedDisease.dureeConvalescenceJours > 0 && (
+                                <div className="self-start sm:self-auto flex-shrink-0">
+                                  {treatmentLogged ? (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-lg shadow-sm">
+                                      <CheckCircle2 size={12} /> Loggué au Registre
+                                    </span>
+                                  ) : (
+                                    <button
+                                      onClick={handleLogTreatment}
+                                      className="px-3.5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-black transition-all duration-200 shadow-md shadow-brand-500/25 flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                      <Plus size={14} /> Loguer le traitement
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* 🩺 CONVALESCENCE PROGRESS LOG */}
+                            {diagnosedDisease.dureeConvalescenceJours > 0 && convalescenceList.length > 0 && (
+                              <div className="mt-4 pt-3.5 border-t border-brand-100 space-y-3">
+                                <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                  <span>Suivi Quotidien de Convalescence</span>
+                                  <span className="text-brand-600 font-black">{convalescenceProgressPct}% validé</span>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div className="h-1.5 bg-gray-200/50 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-brand-500 rounded-full transition-all duration-500"
+                                    style={{ width: `${convalescenceProgressPct}%` }}
+                                  />
+                                </div>
+
+                                {/* Interactive symptom checkoff */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                  {convalescenceList.map((item, idx) => (
+                                    <button
+                                      key={item.label}
+                                      onClick={() => handleToggleConvalescence(idx)}
+                                      className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs font-semibold border transition-all ${
+                                        item.checked 
+                                          ? "bg-white border-brand-300 text-gray-800" 
+                                          : "bg-transparent border-gray-150 text-gray-500 hover:bg-white"
+                                      } cursor-pointer`}
+                                    >
+                                      <span className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
+                                        item.checked ? "bg-brand-500 border-brand-500 text-white" : "border-gray-300 bg-white"
+                                      }`}>
+                                        {item.checked && <CheckCircle2 size={10} className="text-white" />}
+                                      </span>
+                                      <span className="truncate">{item.label}</span>
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
                             )}
                           </div>
-
-                          {/* 🩺 CONVALESCENCE PROGRESS LOG */}
-                          {diagnosedDisease.dureeConvalescenceJours > 0 && convalescenceList.length > 0 && (
-                            <div className="mt-4 pt-3.5 border-t border-brand-100 space-y-3">
-                              <div className="flex justify-between items-center text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                <span>Suivi Quotidien de Convalescence</span>
-                                <span className="text-brand-600 font-black">{convalescenceProgressPct}% validé</span>
-                              </div>
-
-                              {/* Progress bar */}
-                              <div className="h-1.5 bg-gray-200/50 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-brand-500 rounded-full transition-all duration-500"
-                                  style={{ width: `${convalescenceProgressPct}%` }}
-                                />
-                              </div>
-
-                              {/* Interactive symptom checkoff */}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                {convalescenceList.map((item, idx) => (
-                                  <button
-                                    key={item.label}
-                                    onClick={() => handleToggleConvalescence(idx)}
-                                    className={`flex items-center gap-2 p-2 rounded-lg text-left text-xs font-semibold border transition-all ${
-                                      item.checked 
-                                        ? "bg-white border-brand-300 text-gray-800" 
-                                        : "bg-transparent border-gray-150 text-gray-500 hover:bg-white"
-                                    } cursor-pointer`}
-                                  >
-                                    <span className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition-all ${
-                                      item.checked ? "bg-brand-500 border-brand-500 text-white" : "border-gray-300 bg-white"
-                                    }`}>
-                                      {item.checked && <CheckCircle2 size={10} className="text-white" />}
-                                    </span>
-                                    <span className="truncate">{item.label}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
           </div>
         )}
-
-        {/* Dynamic Prophylaxis Calendar Co-pilot Widget */}
-        <div className="card p-5">
-          <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-            <ShieldCheck size={16} className="text-emerald-500" />
-            Co-pilote Vétérinaire — Calendrier de Prophylaxie
-          </h2>
-          <p className="text-xs text-gray-400 font-semibold mb-5">
-            Plan vaccinal et de santé standard (Cobb 500 / Ross 308)
-          </p>
-
-          <div className="relative pl-4 border-l-2 border-gray-100 space-y-4">
-            {computedMilestones.map((milestone) => {
-              const isDone = milestone.status === "done";
-              const isTodo = milestone.status === "todo";
-              const isUpcoming = milestone.status === "upcoming";
-
-              return (
-                <div key={milestone.jour} className="relative group pl-3">
-                  {/* Circle timeline indicator */}
-                  <span className={`absolute -left-[23px] top-1 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm
-                    ${isDone ? "border-emerald-500 bg-emerald-50" : ""}
-                    ${isTodo ? "border-amber-500 bg-amber-50 animate-pulse" : ""}
-                    ${isUpcoming ? "border-gray-200 bg-gray-50" : ""}
-                  `}>
-                    {isDone && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                    {isTodo && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />}
-                  </span>
-
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs font-black text-gray-800">{milestone.label}</p>
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">{milestone.type}</span>
-                      </div>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">Échéance : J+{milestone.jour} ({milestone.formattedDate})</p>
-                      <p className="text-[11px] text-gray-500 font-semibold mt-1 leading-tight">{milestone.note}</p>
-                    </div>
-                    <div className="self-start sm:self-auto">
-                      {isDone ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shadow-sm">
-                          <CheckCircle2 size={9} /> Complété
-                        </span>
-                      ) : isTodo ? (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 shadow-sm">
-                          ⚠️ À faire
-                        </span>
-                      ) : (
-                        <span className="text-[9px] font-black uppercase tracking-wider text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
-                          À venir
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Dynamic Feed Consumption Line Chart Widget */}
         <div className="card p-5">
