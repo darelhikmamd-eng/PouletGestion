@@ -280,6 +280,107 @@ export default function BandeDetailPage({
           </div>
         )}
 
+        {/* Slices of logged details (Feed, Health, Outflows) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Feed log slice */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+              <h2 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-1.5">
+                <Wheat size={14} className="text-blue-500" />
+                Alimentation
+              </h2>
+              <button onClick={() => setShowAlimentModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
+            </div>
+            {consommations.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">Aucun repas ou sac enregistré</p>
+            ) : (
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                {consommations.slice().reverse().map((c) => (
+                  <div key={c.id} className="flex items-center justify-between text-xs group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+                    <div className="min-w-0">
+                      <span className="font-bold text-gray-700 truncate block text-[11px]">{c.type_aliment}</span>
+                      <span className="text-[9px] text-gray-400 font-semibold">{c.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-extrabold text-gray-800 text-[11px]">{c.quantite_kg} kg · {formatMontant(c.montant)}</span>
+                      <button onClick={() => void deleteConsommation(c.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Health log slice */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+              <h2 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-1.5">
+                <HeartPulse size={14} className="text-purple-500" />
+                Soins & Santé
+              </h2>
+              <button onClick={() => setShowSanteModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
+            </div>
+            {santeOps.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">Aucun traitement ou vaccin</p>
+            ) : (
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                {santeOps.slice().reverse().map((s) => (
+                  <div key={s.id} className="flex items-center justify-between text-xs group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+                    <div className="min-w-0">
+                      <span className="font-bold text-gray-700 truncate block text-[11px]">{s.medicament}</span>
+                      <span className="text-[9px] text-gray-400 font-semibold">{s.type_op} · {s.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-extrabold text-gray-800 text-[11px]">{formatMontant(s.montant)}</span>
+                      <button onClick={() => void deleteSanteOp(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Outflow log slice */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+              <h2 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-1.5">
+                <TrendingDown size={14} className="text-red-500" />
+                Ventes & Décès
+              </h2>
+              <button onClick={() => setShowSortieModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
+            </div>
+            {sorties.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-6">Aucune vente ou perte déclarée</p>
+            ) : (
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                {sorties.slice().reverse().map((s) => (
+                  <div key={s.id} className="flex items-center justify-between text-xs group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="font-bold text-gray-700 text-[11px]">{s.quantite} sujets</span>
+                        <Badge variant={s.motif === "vente" ? "success" : "error"}>{s.motif}</Badge>
+                      </div>
+                      <span className="text-[9px] text-gray-400 font-semibold">{s.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="font-extrabold text-gray-800 text-[11px]">
+                        {s.motif === "vente" ? formatMontant(s.montant_total) : (s.cause_deces || "Mortel")}
+                      </span>
+                      <button onClick={() => void deleteSortie(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Dashboard 4 KPI highlights */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -1056,107 +1157,6 @@ export default function BandeDetailPage({
               <InfoRow icon={Phone} label="Contact Téléphonique" value={bande.contact_fournisseur || "Non renseigné"} />
               <InfoRow icon={Bird} label="Souche / Race du Poussin" value={bande.race} />
             </div>
-          </div>
-        </div>
-
-        {/* Slices of logged details (Feed, Health, Outflows) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Feed log slice */}
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-              <h2 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-1.5">
-                <Wheat size={14} className="text-blue-500" />
-                Alimentation
-              </h2>
-              <button onClick={() => setShowAlimentModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
-            </div>
-            {consommations.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">Aucun repas ou sac enregistré</p>
-            ) : (
-              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                {consommations.slice().reverse().map((c) => (
-                  <div key={c.id} className="flex items-center justify-between text-xs group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                    <div className="min-w-0">
-                      <span className="font-bold text-gray-700 truncate block text-[11px]">{c.type_aliment}</span>
-                      <span className="text-[9px] text-gray-400 font-semibold">{c.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="font-extrabold text-gray-800 text-[11px]">{c.quantite_kg} kg · {formatMontant(c.montant)}</span>
-                      <button onClick={() => void deleteConsommation(c.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5">
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Health log slice */}
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-              <h2 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-1.5">
-                <HeartPulse size={14} className="text-purple-500" />
-                Soins & Santé
-              </h2>
-              <button onClick={() => setShowSanteModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
-            </div>
-            {santeOps.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">Aucun traitement ou vaccin</p>
-            ) : (
-              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                {santeOps.slice().reverse().map((s) => (
-                  <div key={s.id} className="flex items-center justify-between text-xs group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                    <div className="min-w-0">
-                      <span className="font-bold text-gray-700 truncate block text-[11px]">{s.medicament}</span>
-                      <span className="text-[9px] text-gray-400 font-semibold">{s.type_op} · {s.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="font-extrabold text-gray-800 text-[11px]">{formatMontant(s.montant)}</span>
-                      <button onClick={() => void deleteSanteOp(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5">
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Outflow log slice */}
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-              <h2 className="text-xs font-bold text-gray-800 uppercase tracking-widest flex items-center gap-1.5">
-                <TrendingDown size={14} className="text-red-500" />
-                Ventes & Décès
-              </h2>
-              <button onClick={() => setShowSortieModal(true)} className="text-[10px] font-black uppercase text-brand-600 hover:text-brand-700 hover:underline cursor-pointer bg-transparent border-0 outline-none">+ Saisir</button>
-            </div>
-            {sorties.length === 0 ? (
-              <p className="text-xs text-gray-400 text-center py-6">Aucune vente ou perte déclarée</p>
-            ) : (
-              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                {sorties.slice().reverse().map((s) => (
-                  <div key={s.id} className="flex items-center justify-between text-xs group p-1.5 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className="font-bold text-gray-700 text-[11px]">{s.quantite} sujets</span>
-                        <Badge variant={s.motif === "vente" ? "success" : "error"}>{s.motif}</Badge>
-                      </div>
-                      <span className="text-[9px] text-gray-400 font-semibold">{s.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="font-extrabold text-gray-800 text-[11px]">
-                        {s.motif === "vente" ? formatMontant(s.montant_total) : (s.cause_deces || "Mortel")}
-                      </span>
-                      <button onClick={() => void deleteSortie(s.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-0.5">
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>
