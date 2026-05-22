@@ -145,15 +145,55 @@ export function SortieForm({ bandeId = "", onSuccess, onCancel, onlyVente = fals
         />
 
         {!isVente && (
-          <Input
-            label="Cause du décès"
-            name="cause_deces"
-            value={form.cause_deces ?? ""}
-            onChange={handleChange}
-            placeholder="Ex: Chaleur, Étouffement, Maladie..."
-            className="sm:col-span-2"
-          />
+          <div className="sm:col-span-2 flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Cause du décès</label>
+            <select
+              name="cause_deces"
+              value={form.cause_deces ?? ""}
+              onChange={handleChange}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all cursor-pointer"
+            >
+              <option value="">— Sélectionner la cause —</option>
+              <optgroup label="🌡️ Causes climatiques">
+                <option value="Stress thermique (chaleur excessive)">Stress thermique (chaleur excessive)</option>
+                <option value="Coup de froid / hypothermie">Coup de froid / hypothermie</option>
+                <option value="Variation brusque de température">Variation brusque de température</option>
+              </optgroup>
+              <optgroup label="🦠 Maladies infectieuses">
+                <option value="Maladie de Newcastle">Maladie de Newcastle</option>
+                <option value="Maladie de Gumboro (IBD)">Maladie de Gumboro (IBD)</option>
+                <option value="Bronchite infectieuse">Bronchite infectieuse</option>
+                <option value="Coccidiose aviaire">Coccidiose aviaire</option>
+                <option value="Colibacillose (E. coli)">Colibacillose (E. coli)</option>
+                <option value="Mycoplasmose respiratoire">Mycoplasmose respiratoire</option>
+                <option value="Maladie de Marek">Maladie de Marek</option>
+                <option value="Salmonellose">Salmonellose</option>
+                <option value="Typhose aviaire (Pasteurellose)">Typhose aviaire (Pasteurellose)</option>
+              </optgroup>
+              <optgroup label="💨 Asphyxie & accidents">
+                <option value="Étouffement / entassement">Étouffement / entassement</option>
+                <option value="Intoxication (ammoniac / fumée)">Intoxication (ammoniac / fumée)</option>
+                <option value="Noyade dans les abreuvoirs">Noyade dans les abreuvoirs</option>
+                <option value="Traumatisme / blessure">Traumatisme / blessure</option>
+                <option value="Cannibalisme / picage">Cannibalisme / picage</option>
+              </optgroup>
+              <optgroup label="🍽️ Nutrition & gestion">
+                <option value="Déshydratation / manque d'eau">Déshydratation / manque d'eau</option>
+                <option value="Sous-alimentation / malnutrition">Sous-alimentation / malnutrition</option>
+                <option value="Intoxication alimentaire (aliment avarié)">Intoxication alimentaire (aliment avarié)</option>
+              </optgroup>
+              <optgroup label="🐣 Mortalité démarrage">
+                <option value="Mortalité de démarrage (J1–J5)">Mortalité de démarrage (J1–J5)</option>
+                <option value="Poussin de mauvaise qualité (cheptel)">Poussin de mauvaise qualité (cheptel)</option>
+              </optgroup>
+              <optgroup label="❓ Indéterminé">
+                <option value="Cause indéterminée">Cause indéterminée</option>
+                <option value="Autre">Autre (préciser dans les notes)</option>
+              </optgroup>
+            </select>
+          </div>
         )}
+
 
         {isVente && (
           <>
