@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb, ensureTablesExist } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { hashPassword, setSessionCookie, generateId } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
+    // Auto-create tables if they don't exist yet
+    await ensureTablesExist();
+
     const body = await req.json();
     const {
       email,
