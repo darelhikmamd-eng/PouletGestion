@@ -86,6 +86,20 @@ export const useBandesStore = create<BandesState>()((set, get) => ({
   },
 
   cloturerBande: async (id) => {
+    const bande = get().bandes.find((b) => b.id === id);
+    if (bande) {
+      const today = new Date();
+      const debut = new Date(bande.date_debut);
+      const ageJours = Math.max(
+        0,
+        Math.floor((today.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24))
+      );
+      if (ageJours < 45) {
+        alert(`Impossible de clôturer la bande "${bande.nom_lot}". Le nombre de jours minimum requis est de 45 jours. L'âge actuel de ce lot est de ${ageJours} jour(s).`);
+        return;
+      }
+    }
+
     const res = await fetch(`/api/bandes/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

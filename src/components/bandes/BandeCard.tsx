@@ -24,6 +24,12 @@ function formatMontant(montant: number) {
 
 export function BandeCard({ bande, onCloturer }: BandeCardProps) {
   const isActive = bande.statut === "actif";
+  const today = new Date();
+  const debut = new Date(bande.date_debut);
+  const ageJours = Math.max(
+    0,
+    Math.floor((today.getTime() - debut.getTime()) / (1000 * 60 * 60 * 24))
+  );
 
   return (
     <div className="card overflow-hidden">
@@ -63,8 +69,16 @@ export function BandeCard({ bande, onCloturer }: BandeCardProps) {
       <div className="border-t border-gray-100 px-4 py-2.5 flex items-center justify-between gap-2">
         {isActive && onCloturer && (
           <button
-            onClick={() => onCloturer(bande.id)}
-            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+            onClick={() => {
+              if (ageJours < 45) {
+                alert(`Impossible de clôturer la bande "${bande.nom_lot}". Le nombre de jours minimum requis est de 45 jours. L'âge actuel est de ${ageJours} jour(s).`);
+                return;
+              }
+              if (confirm(`Êtes-vous sûr de vouloir clôturer la bande "${bande.nom_lot}" ?`)) {
+                onCloturer(bande.id);
+              }
+            }}
+            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium transition-colors cursor-pointer"
           >
             <XCircle size={14} />
             Clôturer
