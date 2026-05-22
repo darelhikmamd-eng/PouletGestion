@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, ensureTablesExist } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { hashPassword, setSessionCookie, generateId } from "@/lib/auth";
+import { hashPassword, createSessionResponse, generateId } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
-    // Auto-create tables if they don't exist yet
     await ensureTablesExist();
 
     const body = await req.json();
@@ -38,7 +37,6 @@ export async function POST(req: NextRequest) {
 
     const db = getDb();
 
-    // Check email uniqueness
     const existing = await db
       .select({ id: users.id })
       .from(users)
@@ -70,15 +68,9 @@ export async function POST(req: NextRequest) {
 
     await db.insert(users).values(newUser);
 
-    // Create session
-    await setSessionCookie({
-      userId: id,
-      farmId: id,
-      email: newUser.email,
-      nomFerme: nom_ferme,
-    });
-
-    return NextResponse.json(
+    // ✅ Cookie posé directement sur la réponse HTTP
+    return createSessionResponse(
+      { userId: id, farmId: id, email: newUser.email, nomFerme: nom_ferme },
       {
         id,
         email: newUser.email,
@@ -90,7 +82,7 @@ export async function POST(req: NextRequest) {
         activite_principale,
         objectif_utilisateur,
       },
-      { status: 201 }
+      201
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur inconnue";

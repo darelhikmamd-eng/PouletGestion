@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, ensureTablesExist } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { verifyPassword, setSessionCookie } from "@/lib/auth";
+import { verifyPassword, createSessionResponse } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
-    // Auto-create tables if they don't exist yet
     await ensureTablesExist();
 
     const body = await req.json();
@@ -44,25 +43,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create JWT session cookie
-    await setSessionCookie({
-      userId: user.id,
-      farmId: user.id,
-      email: user.email,
-      nomFerme: user.nom_ferme,
-    });
-
-    return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      nom_ferme: user.nom_ferme,
-      localite: user.localite,
-      ville: user.ville,
-      pays: user.pays,
-      contact: user.contact,
-      activite_principale: user.activite_principale,
-      objectif_utilisateur: user.objectif_utilisateur,
-    });
+    // ✅ Cookie posé directement sur la réponse HTTP
+    return createSessionResponse(
+      { userId: user.id, farmId: user.id, email: user.email, nomFerme: user.nom_ferme },
+      {
+        id: user.id,
+        email: user.email,
+        nom_ferme: user.nom_ferme,
+        localite: user.localite,
+        ville: user.ville,
+        pays: user.pays,
+        contact: user.contact,
+        activite_principale: user.activite_principale,
+        objectif_utilisateur: user.objectif_utilisateur,
+      }
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur inconnue";
     console.error("POST /api/auth/login", msg);

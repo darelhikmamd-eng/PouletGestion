@@ -1,13 +1,14 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "poulet-tech-secret-key-change-in-production-32chars"
 );
-const COOKIE_NAME = "poulet_session";
+export const COOKIE_NAME = "poulet_session";
 const SESSION_DURATION = "7d";
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
 // ─── Password ────────────────────────────────────────────────────────────────
 
@@ -47,19 +48,40 @@ export async function verifyJWT(token: string): Promise<SessionPayload | null> {
   }
 }
 
-// ─── Cookie helpers (Server Components / Route Handlers) ─────────────────────
+// ─── Cookie options ───────────────────────────────────────────────────────────
 
-export async function setSessionCookie(payload: SessionPayload): Promise<void> {
-  const token = await createJWT(payload);
-  const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, token, {
+export function cookieOptions() {
+  return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    sameSite: "lax" as const,   // lax allows redirects to carry the cookie
+    maxAge: MAX_AGE,
     path: "/",
-  });
+  };
 }
+
+// ─── Set cookie directly on a NextResponse (correct way in Route Handlers) ────
+
+export async function createSessionResponse(
+  payload: SessionPayload,
+  body: object,
+  status = 200
+): Promise<NextResponse> {
+  const token = await createJWT(payload);
+  const res = NextResponse.json(body, { status });
+  res.cookies.set(COOKIE_NAME, token, cookieOptions());
+  return res;
+}
+
+// ─── Delete cookie directly on a NextResponse ─────────────────────────────────
+
+export function deleteSessionResponse(): NextResponse {
+  const res = NextResponse.json({ success: true });
+  res.cookies.set(COOKIE_NAME, "", { ...cookieOptions(), maxAge: 0 });
+  return res;
+}
+
+// ─── Read session from Server Components (next/headers) ──────────────────────
 
 export async function getSessionFromCookies(): Promise<SessionPayload | null> {
   try {
@@ -72,12 +94,7 @@ export async function getSessionFromCookies(): Promise<SessionPayload | null> {
   }
 }
 
-export async function deleteSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
-}
-
-// ─── Session from Request (Middleware / API routes) ──────────────────────────
+// ─── Read session from Request (Middleware / Route Handlers) ─────────────────
 
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {
   const token = req.cookies.get(COOKIE_NAME)?.value;

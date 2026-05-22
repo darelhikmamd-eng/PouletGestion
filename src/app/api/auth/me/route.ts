@@ -1,12 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { getSessionFromCookies } from "@/lib/auth";
+import { getSessionFromRequest } from "@/lib/auth";
 import { eq } from "drizzle-orm";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await getSessionFromCookies();
+    // Read session from the request cookie (consistent with middleware)
+    const session = await getSessionFromRequest(req);
     if (!session) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
