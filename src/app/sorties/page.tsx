@@ -1,15 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, TrendingDown, Calendar, Users, Banknote, X, AlertTriangle } from "lucide-react";
+import { Plus, TrendingDown, Calendar, Users, Banknote, X, AlertTriangle, Trash2 } from "lucide-react";
 import { SortieForm } from "@/components/sorties/SortieForm";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
 import { formatMontant, formatDate } from "@/lib/kpi";
 
 export default function SortiesPage() {
-  const { sorties, bandes } = useBandesStore();
+  const { sorties, bandes, deleteSortie } = useBandesStore();
   const [showForm, setShowForm] = useState(false);
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer ce mouvement de sortie ?")) return;
+    try {
+      await deleteSortie(id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
   const [filterBande, setFilterBande] = useState("tous");
   const [filterMotif, setFilterMotif] = useState<"tous" | "vente" | "décès">("tous");
 
@@ -148,15 +157,22 @@ export default function SortiesPage() {
                     {s.cause_deces && <span className="text-gray-400">{s.cause_deces}</span>}
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {s.motif === "vente" ? (
-                    <div>
+                    <div className="text-right">
                       <p className="text-sm font-bold text-forest-700">{formatMontant(s.montant_total)}</p>
                       <p className="text-xs text-gray-400">{formatMontant(s.prix_unitaire)}/sujet</p>
                     </div>
                   ) : (
                     <p className="text-sm font-semibold text-red-500">−{s.quantite} sujets</p>
                   )}
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    title="Supprimer"
+                    className="w-7 h-7 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
             ))}

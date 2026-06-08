@@ -131,9 +131,31 @@ export async function ensureTablesExist(): Promise<void> {
     await sql`DELETE FROM sorties WHERE farm_id IS NULL OR farm_id = ''`;
   } catch { /* ignore */ }
 
-  // ── 6. Index performances ───────────────────────────────────────────────────
+  // ── 6. Table documents ──────────────────────────────────────────────────────
+  await sql`
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY,
+      farm_id TEXT,
+      bande_id TEXT NOT NULL REFERENCES bandes(id) ON DELETE CASCADE,
+      nom TEXT NOT NULL,
+      type TEXT NOT NULL,
+      date TEXT NOT NULL,
+      data_url TEXT NOT NULL,
+      taille INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  try {
+    await sql`ALTER TABLE documents ADD COLUMN IF NOT EXISTS farm_id TEXT`;
+  } catch { /* ignore */ }
+  try {
+    await sql`DELETE FROM documents WHERE farm_id IS NULL OR farm_id = ''`;
+  } catch { /* ignore */ }
+
+  // ── 7. Index performances ───────────────────────────────────────────────────
   try { await sql`CREATE INDEX IF NOT EXISTS idx_bandes_farm_id ON bandes(farm_id)`; } catch { /* ignore */ }
   try { await sql`CREATE INDEX IF NOT EXISTS idx_consommations_farm_id ON consommations(farm_id)`; } catch { /* ignore */ }
   try { await sql`CREATE INDEX IF NOT EXISTS idx_sante_farm_id ON sante(farm_id)`; } catch { /* ignore */ }
   try { await sql`CREATE INDEX IF NOT EXISTS idx_sorties_farm_id ON sorties(farm_id)`; } catch { /* ignore */ }
+  try { await sql`CREATE INDEX IF NOT EXISTS idx_documents_farm_id ON documents(farm_id)`; } catch { /* ignore */ }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Wheat, Calendar, Scale, Banknote, X } from "lucide-react";
+import { Plus, Wheat, Calendar, Scale, Banknote, X, Trash2 } from "lucide-react";
 import { AlimentForm } from "@/components/alimentation/AlimentForm";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
@@ -14,7 +14,16 @@ const ALIMENT_COLORS: Record<string, string> = {
 };
 
 export default function AlimentationPage() {
-  const { consommations, bandes } = useBandesStore();
+  const { consommations, bandes, deleteConsommation } = useBandesStore();
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer cette entrée d'alimentation ?")) return;
+    try {
+      await deleteConsommation(id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
   const [showForm, setShowForm] = useState(false);
   const [filterBande, setFilterBande] = useState("tous");
 
@@ -131,8 +140,15 @@ export default function AlimentationPage() {
                     <span className="text-gray-400">{c.conditionnement}</span>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <p className="text-sm font-bold text-gray-900">{formatMontant(c.montant)}</p>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    title="Supprimer"
+                    className="w-7 h-7 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
             ))}

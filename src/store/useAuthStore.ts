@@ -22,7 +22,9 @@ interface AuthState {
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   register: (data: FarmProfile & { email: string; password: string }) => Promise<{ ok: boolean; error?: string }>;
-  updateProfile: (profile: FarmProfile) => Promise<void>;
+  updateProfile: (profile: FarmProfile) => Promise<{ ok: boolean; error?: string }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
+  deleteAccount: (password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -91,8 +93,54 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   updateProfile: async (profile) => {
-    // Profile update can be added later via /api/auth/profile
-    set({ farmProfile: profile });
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        set({ farmProfile: data });
+        return { ok: true };
+      }
+      return { ok: false, error: data.error ?? "Erreur lors de la mise à jour du profil." };
+    } catch {
+      return { ok: false, error: "Impossible de contacter le serveur." };
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    try {
+      const res = await fetch("/api/auth/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) return { ok: true };
+      return { ok: false, error: data.error ?? "Erreur lors du changement de mot de passe." };
+    } catch {
+      return { ok: false, error: "Impossible de contacter le serveur." };
+    }
+  },
+
+  deleteAccount: async (password) => {
+    try {
+      const res = await fetch("/api/auth/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        set({ isAuthenticated: false, farmProfile: null });
+        return { ok: true };
+      }
+      return { ok: false, error: data.error ?? "Erreur lors de la suppression du compte." };
+    } catch {
+      return { ok: false, error: "Impossible de contacter le serveur." };
+    }
   },
 
   logout: async () => {

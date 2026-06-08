@@ -28,6 +28,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const requiredProfile: Record<string, unknown> = {
+      "La localité": localite,
+      "La ville": ville,
+      "Le pays": pays,
+      "Le contact": contact,
+    };
+    for (const [label, value] of Object.entries(requiredProfile)) {
+      if (!value || !String(value).trim()) {
+        return NextResponse.json(
+          { error: `${label} est obligatoire.` },
+          { status: 400 }
+        );
+      }
+    }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Le mot de passe doit contenir au moins 6 caractères." },

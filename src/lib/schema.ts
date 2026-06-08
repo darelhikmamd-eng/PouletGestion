@@ -70,3 +70,16 @@ export const sorties = pgTable("sorties", {
   montant_total: real("montant_total").notNull().default(0),
   created_at: timestamp("created_at").defaultNow(),
 });
+
+// ─── Documents ───────────────────────────────────────────────────────────────
+export const documents = pgTable("documents", {
+  id: text("id").primaryKey(),
+  farm_id: text("farm_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  bande_id: text("bande_id").notNull().references(() => bandes.id, { onDelete: "cascade" }),
+  nom: text("nom").notNull(),
+  type: text("type").notNull(),
+  date: text("date").notNull(),
+  data_url: text("data_url").notNull(),
+  taille: integer("taille").notNull().default(0),
+  created_at: timestamp("created_at").defaultNow(),
+});

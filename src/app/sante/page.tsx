@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, HeartPulse, Calendar, Pill, X, Banknote } from "lucide-react";
+import { Plus, HeartPulse, Calendar, Pill, X, Banknote, Trash2 } from "lucide-react";
 import { SanteForm } from "@/components/sante/SanteForm";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
@@ -14,8 +14,17 @@ const OP_COLORS: Record<string, "success" | "error" | "info" | "warning" | "neut
 };
 
 export default function SantePage() {
-  const { santeOps, bandes } = useBandesStore();
+  const { santeOps, bandes, deleteSanteOp } = useBandesStore();
   const [showForm, setShowForm] = useState(false);
+
+  async function handleDelete(id: string) {
+    if (!confirm("Supprimer cette opération sanitaire ?")) return;
+    try {
+      await deleteSanteOp(id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
   const [filterBande, setFilterBande] = useState("tous");
 
   const sorted = [...santeOps].sort((a, b) => b.date.localeCompare(a.date));
@@ -129,8 +138,15 @@ export default function SantePage() {
                     {s.maladie_cible && <span className="text-gray-400">→ {s.maladie_cible}</span>}
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <p className="text-sm font-bold text-gray-900">{formatMontant(s.montant)}</p>
+                  <button
+                    onClick={() => handleDelete(s.id)}
+                    title="Supprimer"
+                    className="w-7 h-7 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
             ))}

@@ -67,6 +67,20 @@ export interface Sortie {
   montant_total: number;
 }
 
+export type DocumentType = "facture" | "reçu" | "fiche vétérinaire" | "autre";
+
+export interface Document {
+  id: string;
+  bande_id: string;
+  nom: string;
+  type: DocumentType | string;
+  date: string;
+  data_url: string;
+  taille: number;
+}
+
+export type DocumentFormData = Omit<Document, "id">;
+
 export type BandeFormData = Omit<Bande, "id">;
 export type ConsommationFormData = Omit<ConsommationAliment, "id">;
 export type SanteFormData = Omit<SanteHygiene, "id">;
