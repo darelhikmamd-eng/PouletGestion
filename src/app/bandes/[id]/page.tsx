@@ -1,13 +1,13 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, Bird, CheckCircle2, XCircle, Wheat, HeartPulse, TrendingDown,
   Activity, AlertTriangle, Clock, TrendingUp, ShoppingCart,
   Package, Lightbulb, Trash2, ShieldCheck, Thermometer, Droplets, Sun,
-  Camera, Upload, Plus
+  Camera, Plus, ImageUp
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
@@ -97,31 +97,61 @@ export default function BandeDetailPage({
   const [diagnosedDisease, setDiagnosedDisease] = useState<any>(null);
   const [convalescenceList, setConvalescenceList] = useState<{ label: string; checked: boolean }[]>([]);
   const [treatmentLogged, setTreatmentLogged] = useState(false);
+  const [customImage, setCustomImage] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const buildConvalescence = (disease: any) => {
+    if (disease && disease.dureeConvalescenceJours > 0) {
+      setConvalescenceList([
+        { label: "Suivi quotidien de l'ingestion d'eau", checked: false },
+        { label: "Nettoyage et désinfection complète des mangeoires", checked: false },
+        { label: "Isolement total du compartiment infecté", checked: false },
+        { label: "Assèchement mécanique et chaulage de la litière", checked: false },
+        { label: "Vérification de l'absence de râles bronchiques", checked: false }
+      ]);
+    } else {
+      setConvalescenceList([]);
+    }
+  };
 
   const handleSampleClick = (diseaseId: string) => {
+    setCustomImage(null);
     setSelectedSample(diseaseId);
     setIsScanning(true);
     setScanComplete(false);
     setTreatmentLogged(false);
-    
+
     setTimeout(() => {
       setIsScanning(false);
       setScanComplete(true);
       const disease = DIAGNOSTIC_IA_DISEASES.find(d => d.id === diseaseId);
       setDiagnosedDisease(disease);
-      
-      if (disease && disease.dureeConvalescenceJours > 0) {
-        setConvalescenceList([
-          { label: "Suivi quotidien de l'ingestion d'eau", checked: false },
-          { label: "Nettoyage et désinfection complète des mangeoires", checked: false },
-          { label: "Isolement total du compartiment infecté", checked: false },
-          { label: "Assèchement mécanique et chaulage de la litière", checked: false },
-          { label: "Vérification de l'absence de râles bronchiques", checked: false }
-        ]);
-      } else {
-        setConvalescenceList([]);
-      }
+      buildConvalescence(disease);
     }, 2000);
+  };
+
+  const handleCustomImage = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = reader.result as string;
+      setCustomImage(url);
+      setSelectedSample("custom");
+      setIsScanning(true);
+      setScanComplete(false);
+      setTreatmentLogged(false);
+
+      setTimeout(() => {
+        setIsScanning(false);
+        setScanComplete(true);
+        // Simulation : sélection d'un profil pathologique à partir de l'imagerie importée
+        const disease = DIAGNOSTIC_IA_DISEASES[Math.floor(Math.random() * DIAGNOSTIC_IA_DISEASES.length)];
+        setDiagnosedDisease(disease);
+        buildConvalescence(disease);
+      }, 2200);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleToggleConvalescence = (index: number) => {
@@ -775,10 +805,44 @@ export default function BandeDetailPage({
                         </button>
                       ))}
 
-                      <div className="border border-dashed border-gray-200 rounded-xl p-4 flex flex-col items-center justify-center text-center bg-gray-50/30 opacity-60">
-                        <Upload size={18} className="text-gray-400" />
-                        <p className="text-[10px] text-gray-500 font-bold mt-1.5">Importer une photo personnalisée</p>
-                        <p className="text-[8px] text-gray-400 mt-0.5">Formats acceptés : PNG, JPG</p>
+                      <input
+                        ref={importInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCustomImage(f); e.target.value = ""; }}
+                      />
+                      <input
+                        ref={cameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCustomImage(f); e.target.value = ""; }}
+                      />
+                      <div className={`border border-dashed rounded-xl p-3 flex flex-col items-center justify-center text-center transition-all ${selectedSample === "custom" ? "border-brand-400 bg-brand-50/40" : "border-gray-200 bg-gray-50/30 hover:border-brand-300"}`}>
+                        <p className="text-[10px] text-gray-600 font-bold mb-2">Analyser votre propre photo</p>
+                        <div className="flex gap-2 w-full">
+                          <button
+                            type="button"
+                            onClick={() => importInputRef.current?.click()}
+                            disabled={isScanning}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 hover:border-brand-400 hover:bg-brand-50 text-gray-700 text-[10px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all disabled:opacity-50 cursor-pointer"
+                          >
+                            <ImageUp size={14} className="text-brand-500" />
+                            Importer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            disabled={isScanning}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white border border-gray-200 hover:border-brand-400 hover:bg-brand-50 text-gray-700 text-[10px] font-black uppercase tracking-wider px-2 py-2 rounded-lg transition-all disabled:opacity-50 cursor-pointer"
+                          >
+                            <Camera size={14} className="text-brand-500" />
+                            Photo
+                          </button>
+                        </div>
+                        <p className="text-[8px] text-gray-400 mt-1.5">PNG, JPG — caméra sur mobile</p>
                       </div>
                     </div>
 
@@ -788,9 +852,13 @@ export default function BandeDetailPage({
                       {isScanning && (
                         <div className="absolute inset-0 bg-brand-500/10 flex flex-col items-center justify-center z-10">
                           <div className="animate-scanner" />
-                          <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg animate-pulse text-brand-600 mb-3">
-                            <Camera size={24} />
-                          </div>
+                          {customImage ? (
+                            <img src={customImage} alt="Échantillon analysé" className="w-24 h-24 object-cover rounded-xl border-2 border-white shadow-lg mb-3" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg animate-pulse text-brand-600 mb-3">
+                              <Camera size={24} />
+                            </div>
+                          )}
                           <p className="text-xs font-black text-brand-700 uppercase tracking-widest animate-bounce">
                             Analyse par convolution IA...
                           </p>
@@ -814,6 +882,12 @@ export default function BandeDetailPage({
                       {/* Scan complete results */}
                       {scanComplete && diagnosedDisease && !isScanning && (
                         <div className="space-y-4">
+                          {customImage && (
+                            <div className="flex items-center gap-2.5">
+                              <img src={customImage} alt="Image analysée" className="w-12 h-12 rounded-lg object-cover border border-gray-200 shadow-sm" />
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Image analysée<br />(votre photo importée)</span>
+                            </div>
+                          )}
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-gray-100">
                             <div>
                               <div className="flex items-center gap-2">
