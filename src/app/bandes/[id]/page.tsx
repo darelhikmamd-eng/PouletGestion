@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { useBandesStore } from "@/store/useBandesStore";
+import { processFileForUpload } from "@/lib/image";
 import { 
   computeKPIs, 
   formatMontant, 
@@ -98,6 +99,7 @@ export default function BandeDetailPage({
   const [convalescenceList, setConvalescenceList] = useState<{ label: string; checked: boolean }[]>([]);
   const [treatmentLogged, setTreatmentLogged] = useState(false);
   const [customImage, setCustomImage] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -117,6 +119,7 @@ export default function BandeDetailPage({
 
   const handleSampleClick = (diseaseId: string) => {
     setCustomImage(null);
+    setScanError(null);
     setSelectedSample(diseaseId);
     setIsScanning(true);
     setScanComplete(false);
@@ -131,27 +134,48 @@ export default function BandeDetailPage({
     }, 2000);
   };
 
-  const handleCustomImage = (file: File) => {
+  const handleCustomImage = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const url = reader.result as string;
-      setCustomImage(url);
-      setSelectedSample("custom");
-      setIsScanning(true);
-      setScanComplete(false);
-      setTreatmentLogged(false);
 
-      setTimeout(() => {
-        setIsScanning(false);
-        setScanComplete(true);
-        // Simulation : sélection d'un profil pathologique à partir de l'imagerie importée
-        const disease = DIAGNOSTIC_IA_DISEASES[Math.floor(Math.random() * DIAGNOSTIC_IA_DISEASES.length)];
-        setDiagnosedDisease(disease);
-        buildConvalescence(disease);
-      }, 2200);
-    };
-    reader.readAsDataURL(file);
+    setScanError(null);
+    setScanComplete(false);
+    setTreatmentLogged(false);
+    setDiagnosedDisease(null);
+    setSelectedSample("custom");
+
+    // Compression côté client avant envoi à l'API de vision
+    let dataUrl: string;
+    try {
+      const processed = await processFileForUpload(file, 1024, 0.7);
+      dataUrl = processed.dataUrl;
+    } catch {
+      dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    setCustomImage(dataUrl);
+    setIsScanning(true);
+
+    try {
+      const res = await fetch("/api/diagnostic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: dataUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Analyse impossible.");
+      setDiagnosedDisease(data);
+      buildConvalescence(data);
+      setScanComplete(true);
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : "Analyse impossible. Réessayez.");
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   const handleToggleConvalescence = (index: number) => {
@@ -164,6 +188,10 @@ export default function BandeDetailPage({
       let med = "Amprolium 20% (Anticoccidien)";
       if (diagnosedDisease.id === "newcastle") med = "Oxytétracycline + Vitamines (Soutien)";
       if (diagnosedDisease.id === "colibacillose") med = "Enrofloxacine 10% (Antibiotique)";
+      // Diagnostic issu de l'analyse IA (id non standard) : on s'appuie sur le traitement proposé
+      if (!["coccidiose", "newcastle", "colibacillose"].includes(diagnosedDisease.id) && diagnosedDisease.traitementPropose) {
+        med = String(diagnosedDisease.traitementPropose).slice(0, 120);
+      }
       
       await addSanteOp({
         bande_id: id,
@@ -860,22 +888,45 @@ export default function BandeDetailPage({
                             </div>
                           )}
                           <p className="text-xs font-black text-brand-700 uppercase tracking-widest animate-bounce">
-                            Analyse par convolution IA...
+                            {customImage ? "Analyse IA en cours..." : "Analyse par convolution IA..."}
                           </p>
-                          <p className="text-[9px] text-gray-400 font-semibold mt-1">Comparaison des biomarqueurs avec la base Cobb 500</p>
+                          <p className="text-[9px] text-gray-400 font-semibold mt-1">
+                            {customImage ? "Votre photo est analysée par Gemini Vision (cela peut prendre quelques secondes)" : "Comparaison des biomarqueurs avec la base Cobb 500"}
+                          </p>
                         </div>
                       )}
 
                       {/* Default state */}
-                      {!selectedSample && !isScanning && (
+                      {!selectedSample && !isScanning && !scanError && (
                         <div className="text-center py-12 flex flex-col items-center justify-center">
                           <div className="w-14 h-14 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center shadow-inner mb-4">
                             <Camera size={28} />
                           </div>
                           <p className="text-sm font-black text-gray-800 tracking-tight">Aucun échantillon en cours d'analyse</p>
                           <p className="text-xs text-gray-400 mt-1 font-semibold max-w-sm">
-                            Sélectionnez l'un des échantillons photographiques sur la gauche pour lancer la simulation d'analyse d'imagerie diagnostique.
+                            Sélectionnez un échantillon à gauche, ou importez/photographiez votre propre image pour lancer une analyse IA réelle.
                           </p>
+                        </div>
+                      )}
+
+                      {/* Error state */}
+                      {scanError && !isScanning && (
+                        <div className="text-center py-10 flex flex-col items-center justify-center">
+                          {customImage && (
+                            <img src={customImage} alt="Échantillon" className="w-16 h-16 object-cover rounded-xl border border-gray-200 shadow-sm mb-3" />
+                          )}
+                          <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shadow-inner mb-3">
+                            <AlertTriangle size={24} />
+                          </div>
+                          <p className="text-sm font-black text-gray-800 tracking-tight">Échec de l'analyse</p>
+                          <p className="text-xs text-red-500 mt-1 font-semibold max-w-sm">{scanError}</p>
+                          <button
+                            type="button"
+                            onClick={() => importInputRef.current?.click()}
+                            className="mt-3 inline-flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white text-[10px] font-black uppercase tracking-wider px-3 py-2 rounded-lg transition-all cursor-pointer"
+                          >
+                            <ImageUp size={13} /> Réessayer avec une autre image
+                          </button>
                         </div>
                       )}
 
@@ -892,8 +943,8 @@ export default function BandeDetailPage({
                             <div>
                               <div className="flex items-center gap-2">
                                 <span className="text-[9px] font-black uppercase text-gray-400">Pathologie Détectée</span>
-                                <Badge variant={diagnosedDisease.id === "sain" ? "success" : "error"}>
-                                  {diagnosedDisease.id === "sain" ? "Sain" : "Alerte Sanitaire"}
+                                <Badge variant={(diagnosedDisease.statut === "sain" || diagnosedDisease.id === "sain") ? "success" : diagnosedDisease.statut === "indetermine" ? "warning" : "error"}>
+                                  {(diagnosedDisease.statut === "sain" || diagnosedDisease.id === "sain") ? "Sain" : diagnosedDisease.statut === "indetermine" ? "Indéterminé" : "Alerte Sanitaire"}
                                 </Badge>
                               </div>
                               <h4 className="text-base font-black text-gray-900 tracking-tight mt-1 flex items-center gap-1.5">
@@ -903,11 +954,20 @@ export default function BandeDetailPage({
 
                             <div className="text-right">
                               <span className="text-xs font-black text-gray-400 block uppercase">Indice de Confiance</span>
-                              <span className={`text-xl font-black ${diagnosedDisease.id === "sain" ? "text-emerald-600" : "text-red-600"}`}>
-                                {diagnosedDisease.id === "sain" ? "99.8%" : "94.2%"}
+                              <span className={`text-xl font-black ${(diagnosedDisease.statut === "sain" || diagnosedDisease.id === "sain") ? "text-emerald-600" : diagnosedDisease.statut === "indetermine" ? "text-amber-600" : "text-red-600"}`}>
+                                {typeof diagnosedDisease.confiance === "number"
+                                  ? `${diagnosedDisease.confiance.toFixed(1)}%`
+                                  : diagnosedDisease.id === "sain" ? "99.8%" : "94.2%"}
                               </span>
                             </div>
                           </div>
+
+                          {customImage && (
+                            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded-lg">
+                              <AlertTriangle size={13} className="flex-shrink-0 mt-0.5 text-amber-500" />
+                              <p className="text-[10px] font-semibold leading-snug">Analyse assistée par IA (Gemini Vision) à titre indicatif. Elle ne remplace pas le diagnostic d'un vétérinaire agréé.</p>
+                            </div>
+                          )}
 
                           {/* Description */}
                           <div>
