@@ -106,8 +106,33 @@ export async function POST(req: NextRequest) {
     if (!geminiRes.ok) {
       const errText = await geminiRes.text().catch(() => "");
       console.error("Gemini API error", geminiRes.status, errText);
+
+      let detail: { error?: { status?: string; message?: string; details?: { "@type"?: string; retryDelay?: string }[] } } | null = null;
+      try { detail = JSON.parse(errText); } catch { /* corps non JSON */ }
+      const gStatus = detail?.error?.status;
+      const gMessage = detail?.error?.message;
+
+      if (geminiRes.status === 429 || gStatus === "RESOURCE_EXHAUSTED") {
+        const retry = detail?.error?.details?.find((d) => d["@type"]?.includes("RetryInfo"))?.retryDelay;
+        return NextResponse.json(
+          { error: `Quota Gemini dépassé (offre gratuite). ${retry ? `Réessayez dans ${retry}` : "Réessayez plus tard"}, ou activez la facturation sur Google AI Studio.` },
+          { status: 429 }
+        );
+      }
+      if (geminiRes.status === 403 || gStatus === "PERMISSION_DENIED") {
+        return NextResponse.json(
+          { error: "Clé API Gemini refusée (403). Vérifiez que la clé est valide et autorisée pour l'API Generative Language." },
+          { status: 403 }
+        );
+      }
+      if (geminiRes.status === 400) {
+        return NextResponse.json(
+          { error: gMessage ? `Requête refusée par Gemini : ${gMessage}` : "Image ou requête invalide pour l'analyse." },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: `Erreur du service d'analyse (${geminiRes.status}). Vérifiez la clé API et le quota.` },
+        { error: `Erreur du service d'analyse Gemini (${geminiRes.status}). Réessayez plus tard.` },
         { status: 502 }
       );
     }
