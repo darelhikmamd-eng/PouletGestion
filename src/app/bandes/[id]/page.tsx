@@ -26,6 +26,7 @@ import { SVGLineChart } from "@/components/ui/SVGLineChart";
 import { AlimentForm } from "@/components/alimentation/AlimentForm";
 import { SanteForm } from "@/components/sante/SanteForm";
 import { SortieForm } from "@/components/sorties/SortieForm";
+import { ChickenCounter } from "@/components/sante/ChickenCounter";
 
 
 
@@ -1078,6 +1079,8 @@ export default function BandeDetailPage({
                     </div>
                   </div>
                 </div>
+
+                <ChickenCounter />
               </div>
             )}
             {/* Contenu de l'onglet 4 : Performances */}
